@@ -1,7 +1,7 @@
 package libvirt
 
 import (
-	"github.com/alexzorin/libvirt-go"
+	"github.com/bakins/libvirt-go"
 	"github.com/mistifyio/mistify-agent/rpc"
 	"syscall"
 )
