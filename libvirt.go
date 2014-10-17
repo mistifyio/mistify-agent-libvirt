@@ -125,7 +125,7 @@ func (lv *Libvirt) Reboot(r *http.Request, request *rpc.GuestRequest, response *
 func (lv *Libvirt) Run(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	return lv.DomainWrapper(func(domain *Domain) error {
 
-		switch domian.State {
+		switch domain.State {
 
 		case libvirt.VIR_DOMAIN_RUNNING:
 			// nothing to do
