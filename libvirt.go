@@ -3,16 +3,11 @@ package libvirt
 import (
 	"github.com/alexzorin/libvirt-go"
 	"github.com/mistifyio/mistify-agent/rpc"
+	"github.com/mistifyio/mistify-agent/client"
 	"syscall"
-)
-
-var NotFound = errors.New("not found")
-
-const (
-	EAGAIN = syscall.EAGAIN
-	EEXIST = syscall.EEXIST
-	ENOSPC = syscall.ENOSPC
-	EINVAL = syscall.EINVAL
+	"net/http"
+	"runtime"
+	"fmt"
 )
 
 type (
@@ -46,13 +41,17 @@ func NewLibvirt(uri string, max int) (*Libvirt, error) {
 	return lv, nil
 }
 
-func (lv *Libvirt) RunHTTP(port int) error {
-	s, _ := rpc.NewServer(port)
-	s.RegisterService(lv)
-	return s.ListenAndServe()
+func (lv *Libvirt) RunHTTP(port uint) error {
+	server, err := rpc.NewServer(int(port))
+	if err != nil {
+		return err
+	}
+
+	server.RegisterService(lv)
+	return server.ListenAndServe()
 }
 
-func newDomain(vDom *libvirt.VirDomain) *Domain {
+func newDomain(vDom *libvirt.VirDomain) (*Domain, error) {
 	domain := &Domain{
 		VirDomain: vDom,
 	}
@@ -65,8 +64,8 @@ func newDomain(vDom *libvirt.VirDomain) *Domain {
 		return nil, err
 	}
 
-	domain.State = state
-	return domain
+	domain.State = state[0]
+	return domain, nil
 }
 
 func (d *Domain) Free() {
@@ -76,53 +75,85 @@ func (d *Domain) Free() {
 	}
 }
 
-// LookupDomainByName will return a Domain with the given name
-func (lv *Libvirt) LookupDomainByName(name string) (*Domain, error) {
-	v := <-lv.connections
+func (lv *Libvirt) getConnection() *libvirt.VirConnection {
+	conn := <-lv.connections
 	defer func() {
-		lv.connections <- v
+		lv.connections <- conn
 	}()
-	vDom, err := v.LookupDomainByName(name)
 
+	return conn
+}
+
+func (lv *Libvirt) LookupDomainByName(name string) (*Domain, error) {
+	conn := lv.getConnection()
+
+	vDom, err := conn.LookupDomainByName(name)
 	if err != nil {
-		if strings.Contains(err.Error(), "Domain not found:") {
-			err = NotFound
-		}
 		return nil, err
 	}
 
-	domain := newDomain(vDom)
-
-	return domain, nil
+	return newDomain(&vDom)
 }
 
-func (lv *Libvirt) DomainWrapper(fn func(*Domain) error) func(*http.Request, *rpc.Request, *rpc.Response) error {
+func (lv *Libvirt) NewDomain(guest *client.Guest) (*Domain, error) {
+	conn := lv.getConnection()
+
+	vDom, err := conn.DomainDefineXML(fmt.Sprintf(`<domain type="test"><name>%s</name><memory unit="MiB">%d</memory><os><type>hvm</type></os></domain>`, guest.Id, guest.Memory))
+	if err != nil {
+		return nil, err
+	}
+
+	return newDomain(&vDom)
+}
+
+func (lv *Libvirt) DomainWrapper(fn func(*Domain) error) func(*http.Request, *rpc.GuestRequest, *rpc.GuestResponse) error {
 	return func(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 		if request.Guest == nil || request.Guest.Id == "" {
-			return EINVAL
+			return syscall.EINVAL
 		}
+
 		domain, err := lv.LookupDomainByName(request.Guest.Id)
 		if err != nil {
 			return err
 		}
+
 		err = fn(domain)
 		if err != nil {
 			return err
 		}
+
 		*response = rpc.GuestResponse{
-			Guest: &request.Guest,
+			Guest: request.Guest,
 		}
 		return nil
 	}
 }
 
-func (lv *Libvirt) Reboot(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	return lv.DomainWrapper(func(domain *Domain) error {
-		return domain.Reboot(0)
-	})
+func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+	domain, err := lv.NewDomain(request.Guest)
+	if err != nil {
+		return err
+	}
+
+	err = domain.Create()
+	if err != nil {
+		return err
+	}
+
+	*response = rpc.GuestResponse{
+		Guest: request.Guest,
+	}
+
+	return nil
 }
 
-func (lv *Libvirt) Run(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+	return lv.DomainWrapper(func(domain *Domain) error {
+		return domain.Reboot(0)
+	})(http, request, response)
+}
+
+func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	return lv.DomainWrapper(func(domain *Domain) error {
 
 		switch domain.State {
@@ -138,11 +169,10 @@ func (lv *Libvirt) Run(r *http.Request, request *rpc.GuestRequest, response *rpc
 		}
 
 		return nil
-	})
-
+	})(http, request, response)
 }
 
-func (lv *Libvirt) Shutdown(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	return lv.DomainWrapper(func(domain *Domain) error {
 
 		switch domain.State {
@@ -154,6 +184,6 @@ func (lv *Libvirt) Shutdown(r *http.Request, request *rpc.GuestRequest, response
 		}
 
 		return nil
-	})
+	})(http, request, response)
 
 }
