@@ -164,7 +164,7 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 	}
 
 	*response = rpc.GuestResponse{
-		Guest: nil,
+		Guest: request.Guest,
 	}
 
 	return nil
