@@ -6,9 +6,19 @@ import (
 	"github.com/mistifyio/mistify-agent/client"
 	"syscall"
 	"net/http"
-	"runtime"
 	"fmt"
 )
+
+var StateNames = map[int]string{
+	libvirt.VIR_DOMAIN_NOSTATE: "No State",
+	libvirt.VIR_DOMAIN_RUNNING: "Running",
+	libvirt.VIR_DOMAIN_BLOCKED: "Blocked",
+	libvirt.VIR_DOMAIN_PAUSED: "Paused",
+	libvirt.VIR_DOMAIN_SHUTDOWN: "Shutdown",
+	libvirt.VIR_DOMAIN_CRASHED: "Crashed",
+	libvirt.VIR_DOMAIN_PMSUSPENDED: "Suspended",
+	libvirt.VIR_DOMAIN_SHUTOFF: "Shutoff",
+}
 
 type (
 	Libvirt struct {
@@ -51,30 +61,6 @@ func (lv *Libvirt) RunHTTP(port uint) error {
 	return server.ListenAndServe()
 }
 
-func newDomain(vDom *libvirt.VirDomain) (*Domain, error) {
-	domain := &Domain{
-		VirDomain: vDom,
-	}
-	runtime.SetFinalizer(domain, func(domain *Domain) {
-		domain.Free()
-	})
-
-	state, err := vDom.GetState()
-	if err != nil {
-		return nil, err
-	}
-
-	domain.State = state[0]
-	return domain, nil
-}
-
-func (d *Domain) Free() {
-	if d.VirDomain != nil {
-		d.VirDomain.Free()
-		d.VirDomain = nil
-	}
-}
-
 func (lv *Libvirt) getConnection() *libvirt.VirConnection {
 	conn := <-lv.connections
 	defer func() {
@@ -84,40 +70,55 @@ func (lv *Libvirt) getConnection() *libvirt.VirConnection {
 	return conn
 }
 
-func (lv *Libvirt) LookupDomainByName(name string) (*Domain, error) {
+func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 	conn := lv.getConnection()
 
-	vDom, err := conn.LookupDomainByName(name)
+	domain, err := conn.LookupDomainByName(name)
 	if err != nil {
 		return nil, err
 	}
 
-	return newDomain(&vDom)
+	return &domain, err
 }
 
-func (lv *Libvirt) NewDomain(guest *client.Guest) (*Domain, error) {
+func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	conn := lv.getConnection()
 
-	vDom, err := conn.DomainDefineXML(fmt.Sprintf(`<domain type="test"><name>%s</name><memory unit="MiB">%d</memory><os><type>hvm</type></os></domain>`, guest.Id, guest.Memory))
+	domain, err := conn.DomainDefineXML(fmt.Sprintf(`<domain type="test"><name>%s</name><memory unit="MiB">%d</memory><os><type>hvm</type></os></domain>`, guest.Id, guest.Memory))
 	if err != nil {
 		return nil, err
 	}
 
-	return newDomain(&vDom)
+	return &domain, err
 }
 
-func (lv *Libvirt) DomainWrapper(fn func(*Domain) error) func(*http.Request, *rpc.GuestRequest, *rpc.GuestResponse) error {
+func GetState(domain *libvirt.VirDomain) (int, error) {
+	state, err := domain.GetState()
+	if err != nil {
+		return libvirt.VIR_DOMAIN_NOSTATE, err
+	}
+
+	return state[0], nil
+}
+
+func (lv *Libvirt) DomainWrapper(fn func(*libvirt.VirDomain, int) error) func(*http.Request, *rpc.GuestRequest, *rpc.GuestResponse) error {
 	return func(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 		if request.Guest == nil || request.Guest.Id == "" {
 			return syscall.EINVAL
 		}
 
 		domain, err := lv.LookupDomainByName(request.Guest.Id)
+		defer domain.Free()
 		if err != nil {
 			return err
 		}
 
-		err = fn(domain)
+		state, err := GetState(domain)
+		if err != nil {
+			return err
+		}
+
+		err = fn(domain, state)
 		if err != nil {
 			return err
 		}
@@ -125,6 +126,14 @@ func (lv *Libvirt) DomainWrapper(fn func(*Domain) error) func(*http.Request, *rp
 		*response = rpc.GuestResponse{
 			Guest: request.Guest,
 		}
+
+		state, err = GetState(domain)
+		if err != nil {
+			return err
+		}
+
+		response.Guest.State = StateNames[state]
+
 		return nil
 	}
 }
@@ -140,13 +149,27 @@ func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, respo
 }
 
 func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	return lv.DomainWrapper(func(domain *Domain) error {
-		return domain.Destroy()
-	})(http, request, response)
+	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	defer domain.Free()
+	if err != nil {
+		return err
+	}
+
+	err = domain.Destroy()
+	if err != nil {
+		return err
+	}
+
+	*response = rpc.GuestResponse{
+		Guest: nil,
+	}
+
+	return nil
 }
 
 func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	domain, err := lv.NewDomain(request.Guest)
+	defer domain.Free()
 	if err != nil {
 		return err
 	}
@@ -160,13 +183,19 @@ func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, respons
 		Guest: request.Guest,
 	}
 
+	state, err := GetState(domain)
+	if err != nil {
+		return err
+	}
+
+	response.Guest.State = StateNames[state]
+
 	return nil
 }
 
 func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	return lv.DomainWrapper(func(domain *Domain) error {
-
-		switch domain.State {
+	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
+		switch state {
 
 		case libvirt.VIR_DOMAIN_RUNNING:
 			// nothing to do
@@ -183,15 +212,15 @@ func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *
 }
 
 func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	return lv.DomainWrapper(func(domain *Domain) error {
+	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
 		return domain.Reboot(0)
 	})(http, request, response)
 }
 
 func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	return lv.DomainWrapper(func(domain *Domain) error {
+	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
 
-		switch domain.State {
+		switch state {
 		case libvirt.VIR_DOMAIN_SHUTDOWN, libvirt.VIR_DOMAIN_SHUTOFF:
 			// nothing to do
 
@@ -200,6 +229,13 @@ func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, respo
 		}
 
 		return nil
+	})(http, request, response)
+}
+
+func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
+		_, err := domain.GetState()
+		return err
 	})(http, request, response)
 }
 
