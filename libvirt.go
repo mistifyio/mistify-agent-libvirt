@@ -129,6 +129,22 @@ func (lv *Libvirt) DomainWrapper(fn func(*Domain) error) func(*http.Request, *rp
 	}
 }
 
+// Guest Actions
+
+func (lv *Libvirt) Restart(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+	return lv.Reboot(http, request, response)
+}
+
+func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+	return lv.Shutdown(http, request, response)
+}
+
+func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+	return lv.DomainWrapper(func(domain *Domain) error {
+		return domain.Destroy()
+	})(http, request, response)
+}
+
 func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	domain, err := lv.NewDomain(request.Guest)
 	if err != nil {
@@ -145,12 +161,6 @@ func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, respons
 	}
 
 	return nil
-}
-
-func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	return lv.DomainWrapper(func(domain *Domain) error {
-		return domain.Reboot(0)
-	})(http, request, response)
 }
 
 func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
@@ -172,6 +182,12 @@ func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *
 	})(http, request, response)
 }
 
+func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+	return lv.DomainWrapper(func(domain *Domain) error {
+		return domain.Reboot(0)
+	})(http, request, response)
+}
+
 func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	return lv.DomainWrapper(func(domain *Domain) error {
 
@@ -185,5 +201,15 @@ func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, respo
 
 		return nil
 	})(http, request, response)
-
 }
+
+/*
+func (lv *Libvirt) CpuMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+}
+
+func (lv *Libvirt) DiskMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+}
+
+func (lv *Libvirt) NicMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+}
+*/
