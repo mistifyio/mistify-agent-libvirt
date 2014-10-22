@@ -234,8 +234,8 @@ func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, respo
 
 func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
-		_, err := domain.GetState()
-		return err
+		// DomainWrapper gets the state already, no need to do anything here
+		return nil
 	})(http, request, response)
 }
 
