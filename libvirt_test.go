@@ -12,6 +12,9 @@ var port uint = 9001
 
 type TestClient struct {
 	rpc *rpc.Client
+	guest *client.Guest
+	request *rpc.GuestRequest
+	response *rpc.GuestResponse
 }
 
 func setup(t *testing.T) *TestClient {
@@ -30,34 +33,62 @@ func setup(t *testing.T) *TestClient {
 		t.Fatalf("Can't create RPC client: %s\n", err.Error())
 	}
 
+	cli.guest = new(client.Guest)
+	cli.guest.Id = "testlibvirt"
+	cli.guest.Memory = 1024
+	cli.guest.Cpu = 1
+
+	disk := client.Disk{
+		Bus: "sata",
+		Device: "/dev/hda",
+		Size: 1024,
+	}
+	cli.guest.Disks = append(cli.guest.Disks, disk)
+
+	nic := client.Nic{
+		Name: "eth0",
+		Mac: "01:23:45:67:89:0a",
+	}
+	cli.guest.Nics = append(cli.guest.Nics, nic)
+
+	cli.request = new(rpc.GuestRequest)
+	cli.request.Guest = cli.guest
+
+	cli.response = new(rpc.GuestResponse)
+
 	return cli
 }
 
-func create(t *testing.T, cli *TestClient) {
-	guest := client.Guest{Id: "testlibvirt", Memory: 1024}
-	request := rpc.GuestRequest{Guest: &guest}
-	response := rpc.GuestResponse{}
-
-	err := cli.rpc.Do("Libvirt.Create", &request, &response)
+func do(action string, t *testing.T, cli *TestClient) {
+	err := cli.rpc.Do(action, cli.request, cli.response)
 	if err != nil {
-		t.Fatalf("Error in create: %s\n", err.Error())
+		t.Fatalf("Error running %s: %s\n", action, err.Error())
 	}
 }
 
-func destroy(t *testing.T, cli *TestClient) {
-	guest := client.Guest{Id: "testlibvirt"}
-	request := rpc.GuestRequest{Guest: &guest}
-	response := rpc.GuestResponse{}
-
-	err := cli.rpc.Do("Libvirt.Delete", &request, &response)
-	if err != nil {
-		t.Fatalf("Error in delete: %s\n", err.Error())
-	}
-}
-
-func TestCreateDestroy(t *testing.T) {
+func TestLibvirt(t *testing.T) {
 	cli := setup(t)
 
-	create(t, cli)
-	destroy(t, cli)
+	do("Libvirt.Create", t, cli)
+	if cli.response.Guest.State != "Running" {
+		t.Fatalf("After create, guest state is %s\n", cli.response.Guest.State)
+	}
+
+	do("Libvirt.Shutdown", t, cli)
+	if cli.response.Guest.State != "Shutoff" {
+		t.Fatalf("After shutdown, guest state is %s\n", cli.response.Guest.State)
+	}
+
+	do("Libvirt.Run", t, cli)
+	if cli.response.Guest.State != "Running" {
+		t.Fatalf("After run, guest state is %s\n", cli.response.Guest.State)
+	}
+
+	do("Libvirt.Restart", t, cli)
+	if cli.response.Guest.State != "Running" {
+		t.Fatalf("After restart, guest state is %s\n", cli.response.Guest.State)
+	}
+
+	do("Libvirt.Delete", t, cli)
 }
+
