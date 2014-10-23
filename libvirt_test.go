@@ -18,7 +18,7 @@ type TestClient struct {
 }
 
 func setup(t *testing.T) *TestClient {
-	lv, err := libvirt.NewLibvirt("test:///default", 1)
+	lv, err := libvirt.NewLibvirt("qemu:///system", 1)
 	if err != nil {
 		t.Fatalf("NewLibvirt failed: %s\n", err.Error())
 	}
