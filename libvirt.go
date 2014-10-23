@@ -254,23 +254,58 @@ func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, respons
 }
 
 func (lv *Libvirt) CpuMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestMetricsResponse) error {
+	var params libvirt.VirTypedParameters
 	metrics := make([]*client.GuestCpuMetrics, request.Guest.Cpu)
 
-	response.CPU = metrics
+	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	if err != nil {
+		return err
+	}
+	defer domain.Free()
+
+	nparams, err := domain.GetCPUStats(nil, 0, 0, uint32(request.Guest.Cpu), 0)
+	if err != nil {
+		return err
+	}
+
+	_, err = domain.GetCPUStats(&params, nparams, 0, uint32(request.Guest.Cpu), 0);
+	if err != nil {
+		return err
+	}
+
+	*response = rpc.GuestMetricsResponse{
+		CPU: metrics,
+	}
 	return nil
 }
 
 func (lv *Libvirt) DiskMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestMetricsResponse) error {
 	metrics := make(map[string]*client.GuestDiskMetrics, len(request.Guest.Disks))
+	var params libvirt.VirTypedParameters
 
-	response.Disk = metrics
+	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	if err != nil {
+		return err
+	}
+	defer domain.Free()
+
+	_, err = domain.BlockStatsFlags("", &params, 0, 0)
+	if err != nil {
+		return err
+	}
+
+	*response = rpc.GuestMetricsResponse{
+		Disk: metrics,
+	}
 	return nil
 }
 
 func (lv *Libvirt) NicMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestMetricsResponse) error {
 	metrics := make(map[string]*client.GuestNicMetrics, len(request.Guest.Nics))
 
-	response.Nic = metrics
+	*response = rpc.GuestMetricsResponse{
+		Nic: metrics,
+	}
 	return nil
 }
 
