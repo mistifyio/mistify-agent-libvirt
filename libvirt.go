@@ -253,13 +253,24 @@ func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, respons
 	})(http, request, response)
 }
 
-/*
-func (lv *Libvirt) CpuMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+func (lv *Libvirt) CpuMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestMetricsResponse) error {
+	metrics := make([]*client.GuestCpuMetrics, request.Guest.Cpu)
+
+	response.CPU = metrics
+	return nil
 }
 
-func (lv *Libvirt) DiskMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+func (lv *Libvirt) DiskMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestMetricsResponse) error {
+	metrics := make(map[string]*client.GuestDiskMetrics, len(request.Guest.Disks))
+
+	response.Disk = metrics
+	return nil
 }
 
-func (lv *Libvirt) NicMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
+func (lv *Libvirt) NicMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestMetricsResponse) error {
+	metrics := make(map[string]*client.GuestNicMetrics, len(request.Guest.Nics))
+
+	response.Nic = metrics
+	return nil
 }
-*/
+
