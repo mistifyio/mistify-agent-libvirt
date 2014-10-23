@@ -7,7 +7,6 @@ import (
 	"github.com/mistifyio/mistify-agent/log"
 	"syscall"
 	"net/http"
-	"fmt"
 )
 
 var StateNames = map[int]string{
@@ -85,10 +84,12 @@ func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	conn := lv.getConnection()
 
-	domain, err := conn.DomainDefineXML(fmt.Sprintf(`<domain type="test"><name>%s</name><memory unit="MiB">%d</memory><os><type>hvm</type></os></domain>`, guest.Id, guest.Memory))
+	xml := lv.DomainXML(guest)
+	domain, err := conn.DomainDefineXML(xml)
 	if err != nil {
 		return nil, err
 	}
+	defer domain.Free()
 
 	return &domain, err
 }
@@ -109,10 +110,10 @@ func (lv *Libvirt) DomainWrapper(fn func(*libvirt.VirDomain, int) error) func(*h
 		}
 
 		domain, err := lv.LookupDomainByName(request.Guest.Id)
-		defer domain.Free()
 		if err != nil {
 			return err
 		}
+		defer domain.Free()
 
 		state, err := GetState(domain)
 		if err != nil {
@@ -174,10 +175,10 @@ func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, respons
 	log.Info("Libvirt.Create %s\n", request.Guest.Id)
 
 	domain, err := lv.NewDomain(request.Guest)
-	defer domain.Free()
 	if err != nil {
 		return err
 	}
+	defer domain.Free()
 
 	err = domain.Create()
 	if err != nil {
