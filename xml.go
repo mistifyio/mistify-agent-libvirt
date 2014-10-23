@@ -1,13 +1,12 @@
 package libvirt
 
 import (
-	"text/template"
 	"bytes"
 	"github.com/mistifyio/mistify-agent/client"
-	"strings"
+	"text/template"
 )
 
-func (lv *Libvirt) DomainXML(guest *client.Guest) string {
+func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
 	const xml = `
 <domain type="kvm">
   <name>{{.Id}}</name>
@@ -46,14 +45,11 @@ func (lv *Libvirt) DomainXML(guest *client.Guest) string {
 	tmpl := template.New("xml")
 	template.Must(tmpl.Parse(xml))
 
-	buf := make([]byte, 1 << 12)
-	io := bytes.NewBuffer(buf)
-
-	err := tmpl.Execute(io, guest)
+	buf := new(bytes.Buffer)
+	err := tmpl.Execute(buf, guest)
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
-	str := strings.Trim(io.String(), "\x00")
-	return str
+	return buf.String(), nil
 }

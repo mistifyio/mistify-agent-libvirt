@@ -84,7 +84,11 @@ func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	conn := lv.getConnection()
 
-	xml := lv.DomainXML(guest)
+	xml, err := lv.DomainXML(guest)
+	if err != nil {
+		return nil, err
+	}
+
 	domain, err := conn.DomainDefineXML(xml)
 	if err != nil {
 		return nil, err
