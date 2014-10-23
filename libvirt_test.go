@@ -1,19 +1,19 @@
 package libvirt_test
 
 import (
+	"github.com/mistifyio/mistify-agent-libvirt"
+	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/rpc"
 	"testing"
-	"github.com/mistifyio/mistify-agent-libvirt"
 	"time"
-	"github.com/mistifyio/mistify-agent/client"
 )
 
 var port uint = 9001
 
 type TestClient struct {
-	rpc *rpc.Client
-	guest *client.Guest
-	request *rpc.GuestRequest
+	rpc      *rpc.Client
+	guest    *client.Guest
+	request  *rpc.GuestRequest
 	response *rpc.GuestResponse
 }
 
@@ -39,15 +39,15 @@ func setup(t *testing.T) *TestClient {
 	cli.guest.Cpu = 1
 
 	disk := client.Disk{
-		Bus: "sata",
+		Bus:    "sata",
 		Device: "/dev/hda",
-		Size: 1024,
+		Size:   1024,
 	}
 	cli.guest.Disks = append(cli.guest.Disks, disk)
 
 	nic := client.Nic{
 		Name: "eth0",
-		Mac: "01:23:45:67:89:0a",
+		Mac:  "01:23:45:67:89:0a",
 	}
 	cli.guest.Nics = append(cli.guest.Nics, nic)
 
@@ -91,4 +91,3 @@ func TestLibvirt(t *testing.T) {
 
 	do("Libvirt.Delete", t, cli)
 }
-

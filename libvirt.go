@@ -2,22 +2,22 @@ package libvirt
 
 import (
 	"github.com/alexzorin/libvirt-go"
-	"github.com/mistifyio/mistify-agent/rpc"
 	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/log"
-	"syscall"
+	"github.com/mistifyio/mistify-agent/rpc"
 	"net/http"
+	"syscall"
 )
 
 var StateNames = map[int]string{
-	libvirt.VIR_DOMAIN_NOSTATE: "No State",
-	libvirt.VIR_DOMAIN_RUNNING: "Running",
-	libvirt.VIR_DOMAIN_BLOCKED: "Blocked",
-	libvirt.VIR_DOMAIN_PAUSED: "Paused",
-	libvirt.VIR_DOMAIN_SHUTDOWN: "Shutdown",
-	libvirt.VIR_DOMAIN_CRASHED: "Crashed",
+	libvirt.VIR_DOMAIN_NOSTATE:     "No State",
+	libvirt.VIR_DOMAIN_RUNNING:     "Running",
+	libvirt.VIR_DOMAIN_BLOCKED:     "Blocked",
+	libvirt.VIR_DOMAIN_PAUSED:      "Paused",
+	libvirt.VIR_DOMAIN_SHUTDOWN:    "Shutdown",
+	libvirt.VIR_DOMAIN_CRASHED:     "Crashed",
 	libvirt.VIR_DOMAIN_PMSUSPENDED: "Suspended",
-	libvirt.VIR_DOMAIN_SHUTOFF: "Shutoff",
+	libvirt.VIR_DOMAIN_SHUTOFF:     "Shutoff",
 }
 
 type (
@@ -268,7 +268,7 @@ func (lv *Libvirt) CpuMetrics(http *http.Request, request *rpc.GuestRequest, res
 		return err
 	}
 
-	_, err = domain.GetCPUStats(&params, nparams, 0, uint32(request.Guest.Cpu), 0);
+	_, err = domain.GetCPUStats(&params, nparams, 0, uint32(request.Guest.Cpu), 0)
 	if err != nil {
 		return err
 	}
@@ -308,4 +308,3 @@ func (lv *Libvirt) NicMetrics(http *http.Request, request *rpc.GuestRequest, res
 	}
 	return nil
 }
-
