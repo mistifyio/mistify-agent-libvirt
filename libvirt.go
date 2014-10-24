@@ -162,9 +162,23 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 		return err
 	}
 
-	err = domain.Destroy()
+	state, err := GetState(domain)
 	if err != nil {
 		return err
+	}
+
+	switch state {
+	case libvirt.VIR_DOMAIN_RUNNING:
+		err = domain.Destroy()
+		if err != nil {
+			return err
+		}
+
+	case libvirt.VIR_DOMAIN_SHUTDOWN, libvirt.VIR_DOMAIN_SHUTOFF, libvirt.VIR_DOMAIN_BLOCKED, libvirt.VIR_DOMAIN_NOSTATE, libvirt.VIR_DOMAIN_PAUSED, libvirt.VIR_DOMAIN_PMSUSPENDED:
+		err = domain.Undefine()
+		if err != nil {
+			return err
+		}
 	}
 
 	*response = rpc.GuestResponse{
