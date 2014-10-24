@@ -30,7 +30,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       cd /tmp
       git clone git://libvirt.org/libvirt.git
       cd /tmp/libvirt
-      ./autogen.sh
+      ./autogen.sh --with-storage-zfs
       make
       make install || true
 
@@ -56,8 +56,9 @@ PATH=$PATH
 GOPATH=$GOPATH
 EOF
 
-      service libvirt-bin start
-      virsh --connect qemu+unix:///system?socket=/var/run/libvirt/libvirt-sock net-define /tmp/libvirt/src/network/default.xml
+      /usr/local/sbin/libvirtd -d
+      virsh net-define /tmp/libvirt/src/network/default.xml
+      virsh net-start default
     EOB
   end
 end
