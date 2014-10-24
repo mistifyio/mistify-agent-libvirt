@@ -61,35 +61,32 @@ func setup(t *testing.T) *TestClient {
 	return cli
 }
 
-func do(action string, t *testing.T, cli *TestClient) {
+func do(action string, t *testing.T, cli *TestClient, expectedState string) {
 	err := cli.rpc.Do(action, cli.request, cli.response)
 	if err != nil {
 		t.Fatalf("Error running %s: %s\n", action, err.Error())
+	}
+
+	if expectedState != "" {
+		time.Sleep(1 * time.Second)
+
+		err := cli.rpc.Do("Libvirt.Status", cli.request, cli.response)
+		if err != nil {
+			t.Fatalf("Error running Libvirt.Status: %s\n", err.Error())
+		}
+
+		if cli.response.Guest.State != expectedState {
+			t.Fatalf("After %s, expected state %s, got state %s\n", action, expectedState, cli.response.Guest.State)
+		}
 	}
 }
 
 func TestLibvirt(t *testing.T) {
 	cli := setup(t)
 
-	do("Libvirt.Create", t, cli)
-	if cli.response.Guest.State != "Running" {
-		t.Fatalf("After create, guest state is %s\n", cli.response.Guest.State)
-	}
-
-	do("Libvirt.Shutdown", t, cli)
-	if cli.response.Guest.State != "Shutoff" {
-		t.Fatalf("After shutdown, guest state is %s\n", cli.response.Guest.State)
-	}
-
-	do("Libvirt.Run", t, cli)
-	if cli.response.Guest.State != "Running" {
-		t.Fatalf("After run, guest state is %s\n", cli.response.Guest.State)
-	}
-
-	do("Libvirt.Restart", t, cli)
-	if cli.response.Guest.State != "Running" {
-		t.Fatalf("After restart, guest state is %s\n", cli.response.Guest.State)
-	}
-
-	do("Libvirt.Delete", t, cli)
+	do("Libvirt.Create", t, cli, "Running")
+	do("Libvirt.Shutdown", t, cli, "Shutoff")
+	do("Libvirt.Run", t, cli, "Running")
+	do("Libvirt.Restart", t, cli, "Running")
+	do("Libvirt.Delete", t, cli, "")
 }
