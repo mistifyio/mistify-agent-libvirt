@@ -40,14 +40,16 @@ func setup(t *testing.T) *TestClient {
 
 	disk := client.Disk{
 		Bus:    "sata",
-		Device: "/dev/hda",
+		Device: "hda",
 		Size:   1024,
+		Source: "/dev/zvol/guests/images/testlibvirt",
 	}
 	cli.guest.Disks = append(cli.guest.Disks, disk)
 
 	nic := client.Nic{
-		Name: "eth0",
-		Mac:  "01:23:45:67:89:0a",
+		Name:    "eth0",
+		Mac:     "00:0c:29:2f:00:00",
+		Network: "default",
 	}
 	cli.guest.Nics = append(cli.guest.Nics, nic)
 
