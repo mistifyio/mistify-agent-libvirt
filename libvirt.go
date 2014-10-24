@@ -93,7 +93,6 @@ func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer domain.Free()
 
 	return &domain, err
 }
