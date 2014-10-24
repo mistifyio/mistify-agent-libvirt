@@ -23,14 +23,12 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
       apt-get -y install tmux git mercurial gnulib python-dev libxml2-utils libxml2-dev xsltproc libdevmapper-dev \
                          libpciaccess-dev libnl-dev uuid-dev libdbus-1-dev libyajl-dev ubuntu-zfs libzfs-dev
 
-      mkdir /scratch
-      for i in {1..3}; do truncate -s 2G /scratch/$i.img; done
-      zpool create zpool raidz1 /scratch/1.img /scratch/2.img /scratch/3.img
+      apt-get -y remove libvirt0
 
       cd /tmp
       git clone git://libvirt.org/libvirt.git
       cd /tmp/libvirt
-      ./autogen.sh --with-storage-zfs
+      ./autogen.sh
       make
       make install || true
 
@@ -59,6 +57,8 @@ EOF
       /usr/local/sbin/libvirtd -d
       virsh net-define /tmp/libvirt/src/network/default.xml
       virsh net-start default
+
+      zfs create -V 2G guests/images/testlibvirt
     EOB
   end
 end
