@@ -150,7 +150,11 @@ func (lv *Libvirt) Restart(http *http.Request, request *rpc.GuestRequest, respon
 }
 
 func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	return lv.Shutdown(http, request, response)
+	log.Info("Libvirt.Poweroff %s\n", request.Guest.Id)
+
+	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
+		return domain.Destroy()
+	})(http, request, response)
 }
 
 func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
