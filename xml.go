@@ -8,7 +8,7 @@ import (
 
 func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
 	const xml = `
-<domain type="kvm">
+<domain type="{{.Type}}">
   <name>{{.Id}}</name>
   <memory unit="MiB">{{.Memory}}</memory>
   <vcpu>{{.Cpu}}</vcpu>

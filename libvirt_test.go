@@ -37,6 +37,7 @@ func setup(t *testing.T) *TestClient {
 	cli.guest.Id = "testlibvirt"
 	cli.guest.Memory = 1024
 	cli.guest.Cpu = 1
+	cli.guest.Type = "qemu"
 
 	disk := client.Disk{
 		Bus:    "sata",
