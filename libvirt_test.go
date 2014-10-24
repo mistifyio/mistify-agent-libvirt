@@ -68,17 +68,24 @@ func do(action string, t *testing.T, cli *TestClient, expectedState string) {
 	}
 
 	if expectedState != "" {
-		time.Sleep(1 * time.Second)
+		for i := 0; i < 10; i++ {
+			time.Sleep(1 * time.Second)
 
-		err := cli.rpc.Do("Libvirt.Status", cli.request, cli.response)
-		if err != nil {
-			t.Fatalf("Error running Libvirt.Status: %s\n", err.Error())
+			err := cli.rpc.Do("Libvirt.Status", cli.request, cli.response)
+			if err != nil {
+				t.Fatalf("Error running Libvirt.Status: %s\n", err.Error())
+			}
+
+			if cli.response.Guest.State == expectedState {
+				t.Logf("Ran %s, state is now %s\n", action, cli.response.Guest.State)
+				return
+			}
 		}
 
-		if cli.response.Guest.State != expectedState {
-			t.Fatalf("After %s, expected state %s, got state %s\n", action, expectedState, cli.response.Guest.State)
-		}
+		t.Fatalf("After %s, expected state %s, got state %s\n", action, expectedState, cli.response.Guest.State)
 	}
+
+	t.Logf("Ran %s, state is now %s\n", action, cli.response.Guest.State)
 }
 
 func TestLibvirt(t *testing.T) {
@@ -87,6 +94,6 @@ func TestLibvirt(t *testing.T) {
 	do("Libvirt.Create", t, cli, "Running")
 	do("Libvirt.Shutdown", t, cli, "Shutoff")
 	do("Libvirt.Run", t, cli, "Running")
-	do("Libvirt.Restart", t, cli, "Running")
+	do("Libvirt.Reboot", t, cli, "Running")
 	do("Libvirt.Delete", t, cli, "")
 }
