@@ -34,8 +34,9 @@ func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
     {{end}}
 
     {{range .Disks}}
-    <disk type="file" device="disk">
-      <source file="{{.Source}}" />
+    <disk type="block" device="disk">
+      <driver name="qemu" type="raw" />
+      <source dev="{{.Source}}" />
       <target dev="{{.Device}}" bus="{{.Bus}}" />
     </disk>
     {{end}}
