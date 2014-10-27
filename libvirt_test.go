@@ -13,6 +13,7 @@ type TestClient struct {
 	guest    *client.Guest
 	request  *rpc.GuestRequest
 	response *rpc.GuestResponse
+	metrics  *rpc.GuestMetricsResponse
 }
 
 func setup(t *testing.T, url string, port uint) *TestClient {
@@ -86,6 +87,15 @@ func do(action string, t *testing.T, cli *TestClient, expectedState string) {
 	t.Logf("Ran %s, state is now %s\n", action, cli.response.Guest.State)
 }
 
+func metric(action string, t *testing.T, cli *TestClient) {
+	err := cli.rpc.Do(action, cli.request, cli.metrics)
+	if err != nil {
+		t.Fatalf("Error running %s: %s\n", action, err.Error())
+	}
+
+	t.Logf("Ran %s\n", action)
+}
+
 func TestDummy(t *testing.T) {
 	cli := setup(t, "test:///default", 9001)
 	cli.guest.Type = "test"
@@ -102,5 +112,18 @@ func TestQemu(t *testing.T) {
 	cli.guest.Type = "qemu"
 
 	do("Libvirt.Create", t, cli, "Running")
+	do("Libvirt.Delete", t, cli, "")
+}
+
+func TestMetrics(t *testing.T) {
+	cli := setup(t, "qemu:///system", 9003)
+	cli.guest.Type = "qemu"
+
+	do("Libvirt.Create", t, cli, "Running")
+
+	metric("Libvirt.CpuMetrics", t, cli)
+	metric("Libvirt.DiskMetrics", t, cli)
+	metric("Libvirt.NicMetrics", t, cli)
+
 	do("Libvirt.Delete", t, cli, "")
 }

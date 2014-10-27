@@ -161,10 +161,10 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 	log.Info("Libvirt.Delete %s\n", request.Guest.Id)
 
 	domain, err := lv.LookupDomainByName(request.Guest.Id)
-	defer domain.Free()
 	if err != nil {
 		return err
 	}
+	defer domain.Free()
 
 	state, err := GetState(domain)
 	if err != nil {
@@ -287,14 +287,31 @@ func (lv *Libvirt) CpuMetrics(http *http.Request, request *rpc.GuestRequest, res
 		return err
 	}
 
-	_, err = domain.GetCPUStats(&params, nparams, 0, uint32(request.Guest.Cpu), 0)
-	if err != nil {
-		return err
+	for cpu := 0; cpu < int(request.Guest.Cpu); cpu++ {
+		_, err = domain.GetCPUStats(&params, nparams, cpu, 1, 0)
+		if err != nil {
+			return err
+		}
+
+		metric := new(client.GuestCpuMetrics)
+
+		for _, param := range params {
+			switch param.Name {
+			case "cpu_time":
+				metric.CpuTime = float64(param.Value.(uint64))
+			case "vcpu_time":
+				metric.VcpuTime = float64(param.Value.(uint64))
+			}
+		}
+
+		metrics = append(metrics, metric)
+
 	}
 
 	*response = rpc.GuestMetricsResponse{
 		CPU: metrics,
 	}
+
 	return nil
 }
 
@@ -308,9 +325,35 @@ func (lv *Libvirt) DiskMetrics(http *http.Request, request *rpc.GuestRequest, re
 	}
 	defer domain.Free()
 
-	_, err = domain.BlockStatsFlags("", &params, 0, 0)
-	if err != nil {
-		return err
+	for _, disk := range request.Guest.Disks {
+		metric := new(client.GuestDiskMetrics)
+		_, err = domain.BlockStatsFlags(disk.Device, &params, 0, 0)
+		if err != nil {
+			return err
+		}
+
+		for _, param := range params {
+			switch param.Name {
+			case "read_ops":
+				metric.ReadOps = param.Value.(int64)
+			case "read_bytes":
+				metric.ReadBytes = param.Value.(int64)
+			case "read_time":
+				metric.ReadTime = param.Value.(int64)
+			case "write_ops":
+				metric.WriteOps = param.Value.(int64)
+			case "write_bytes":
+				metric.WriteBytes = param.Value.(int64)
+			case "write_time":
+				metric.WriteTime = param.Value.(int64)
+			case "flush_ops":
+				metric.FlushOps = param.Value.(int64)
+			case "flush_time":
+				metric.FlushTime = param.Value.(int64)
+			}
+		}
+
+		metrics[disk.Device] = metric
 	}
 
 	*response = rpc.GuestMetricsResponse{
