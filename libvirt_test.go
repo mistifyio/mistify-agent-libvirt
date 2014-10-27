@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-var port uint = 9001
-
 type TestClient struct {
 	rpc      *rpc.Client
 	guest    *client.Guest
@@ -17,8 +15,8 @@ type TestClient struct {
 	response *rpc.GuestResponse
 }
 
-func setup(t *testing.T) *TestClient {
-	lv, err := libvirt.NewLibvirt("qemu:///system", 1)
+func setup(t *testing.T, url string, port uint) *TestClient {
+	lv, err := libvirt.NewLibvirt(url, 1)
 	if err != nil {
 		t.Fatalf("NewLibvirt failed: %s\n", err.Error())
 	}
@@ -37,7 +35,6 @@ func setup(t *testing.T) *TestClient {
 	cli.guest.Id = "testlibvirt"
 	cli.guest.Memory = 1024
 	cli.guest.Cpu = 1
-	cli.guest.Type = "qemu"
 
 	disk := client.Disk{
 		Bus:    "sata",
@@ -89,12 +86,21 @@ func do(action string, t *testing.T, cli *TestClient, expectedState string) {
 	t.Logf("Ran %s, state is now %s\n", action, cli.response.Guest.State)
 }
 
-func TestLibvirt(t *testing.T) {
-	cli := setup(t)
+func TestDummy(t *testing.T) {
+	cli := setup(t, "test:///default", 9001)
+	cli.guest.Type = "test"
 
 	do("Libvirt.Create", t, cli, "Running")
 	do("Libvirt.Shutdown", t, cli, "Shutoff")
 	do("Libvirt.Run", t, cli, "Running")
 	do("Libvirt.Reboot", t, cli, "Running")
+	do("Libvirt.Delete", t, cli, "")
+}
+
+func TestQemu(t *testing.T) {
+	cli := setup(t, "qemu:///system", 9002)
+	cli.guest.Type = "qemu"
+
+	do("Libvirt.Create", t, cli, "Running")
 	do("Libvirt.Delete", t, cli, "")
 }
