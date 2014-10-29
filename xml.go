@@ -29,6 +29,7 @@ func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
       <guest dev="{{.Name}}" />
       <mac address="{{.Mac}}" />
       <source network="{{.Network}}" />
+      <target dev="{{.Device}}" />
       {{if .Model}}<model type="{{.Model}}" />{{end}}
     </interface>
     {{end}}

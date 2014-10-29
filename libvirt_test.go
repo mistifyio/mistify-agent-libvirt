@@ -49,6 +49,7 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 		Name:    "eth0",
 		Mac:     "00:0c:29:2f:00:00",
 		Network: "default",
+		Device:  "vnet0",
 	}
 	cli.guest.Nics = append(cli.guest.Nics, nic)
 

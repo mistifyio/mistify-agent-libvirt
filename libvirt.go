@@ -365,6 +365,34 @@ func (lv *Libvirt) DiskMetrics(http *http.Request, request *rpc.GuestRequest, re
 func (lv *Libvirt) NicMetrics(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestMetricsResponse) error {
 	metrics := make(map[string]*client.GuestNicMetrics, len(request.Guest.Nics))
 
+	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	if err != nil {
+		return err
+	}
+	defer domain.Free()
+
+	for _, nic := range request.Guest.Nics {
+		log.Info("%v\n", nic)
+		metric := new(client.GuestNicMetrics)
+
+		stats, err := domain.InterfaceStats(nic.Device)
+		if err != nil {
+			return err
+		}
+
+		metric.Name = nic.Name
+		metric.RxBytes = stats.RxBytes
+		metric.RxPackets = stats.RxPackets
+		metric.RxErrs = stats.RxErrs
+		metric.RxDrop = stats.RxDrop
+		metric.TxBytes = stats.TxBytes
+		metric.TxPackets = stats.TxPackets
+		metric.TxErrs = stats.TxErrs
+		metric.TxDrop = stats.TxDrop
+
+		metrics[metric.Name] = metric
+	}
+
 	*response = rpc.GuestMetricsResponse{
 		Nic: metrics,
 	}
