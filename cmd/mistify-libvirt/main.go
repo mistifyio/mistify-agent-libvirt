@@ -5,7 +5,6 @@ import (
 	"github.com/mistifyio/mistify-agent-libvirt"
 	"github.com/mistifyio/mistify-agent/rpc"
 	"log"
-	"net/http"
 	"os"
 )
 
@@ -17,20 +16,22 @@ type (
 func main() {
 
 	var port int
-	var h bool
+	var help bool
 
-	flag.BoolVar(&h, []string{"h", "#help", "-help"}, false, "display the help")
+	flag.BoolVar(&help, []string{"h", "#help", "-help"}, false, "display the help")
 	flag.IntVar(&port, []string{"p", "#port", "-port"}, 19999, "listen port")
 	flag.Parse()
 
-	if h {
+	if help {
 		flag.PrintDefaults()
 		os.Exit(0)
 	}
-	s, err := rpc.NewServer(port)
+
+	server, err := rpc.NewServer(port)
 	if err != nil {
 		log.Fatal(err)
 	}
-	s.RegisterService(&Libvirt{})
-	log.Fatal(s.ListenAndServe())
+
+	server.RegisterService(&libvirt.Libvirt{})
+	log.Fatal(server.ListenAndServe())
 }
