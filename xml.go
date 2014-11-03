@@ -2,11 +2,15 @@ package libvirt
 
 import (
 	"bytes"
-	"github.com/mistifyio/mistify-agent/client"
+	"fmt"
 	"text/template"
+
+	"github.com/mistifyio/mistify-agent/client"
 )
 
 func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
+	fmt.Println(guest)
+
 	const xml = `
 <domain type="{{.Type}}">
   <name>{{.Id}}</name>
@@ -25,10 +29,10 @@ func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
   </os>
   <devices>
     {{range .Nics}}
-    <interface type="network">
+    <interface type="bridge">
       <guest dev="{{.Name}}" />
-      <mac address="{{.Mac}}" />
-      <source network="{{.Network}}" />
+      {{if .Mac}}<mac address="{{.Mac}}" />{{end}}
+      <source bridge='{{.Network}}'/>
       <target dev="{{.Device}}" />
       {{if .Model}}<model type="{{.Model}}" />{{end}}
     </interface>
