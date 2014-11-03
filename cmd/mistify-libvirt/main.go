@@ -1,11 +1,12 @@
 package main
 
 import (
+	"os"
+
 	flag "github.com/docker/docker/pkg/mflag"
 	"github.com/mistifyio/mistify-agent-libvirt"
+	"github.com/mistifyio/mistify-agent/log"
 	"github.com/mistifyio/mistify-agent/rpc"
-	"log"
-	"os"
 )
 
 type (
@@ -32,6 +33,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	server.RegisterService(&libvirt.Libvirt{})
+	lv, err := libvirt.NewLibvirt("qemu:///system", 4)
+	if err != nil {
+		log.Fatal(err)
+	}
+	server.RegisterService(lv)
 	log.Fatal(server.ListenAndServe())
 }
