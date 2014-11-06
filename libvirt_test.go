@@ -101,10 +101,10 @@ func TestDummy(t *testing.T) {
 	cli := setup(t, "test:///default", 9001)
 	cli.guest.Type = "test"
 
-	do("Libvirt.Create", t, cli, "Running")
-	do("Libvirt.Shutdown", t, cli, "Shutoff")
-	do("Libvirt.Run", t, cli, "Running")
-	do("Libvirt.Reboot", t, cli, "Running")
+	do("Libvirt.Create", t, cli, "running")
+	do("Libvirt.Shutdown", t, cli, "shutoff")
+	do("Libvirt.Run", t, cli, "running")
+	do("Libvirt.Reboot", t, cli, "running")
 	do("Libvirt.Delete", t, cli, "")
 }
 
@@ -112,7 +112,7 @@ func TestQemu(t *testing.T) {
 	cli := setup(t, "qemu:///system", 9002)
 	cli.guest.Type = "qemu"
 
-	do("Libvirt.Create", t, cli, "Running")
+	do("Libvirt.Create", t, cli, "running")
 	do("Libvirt.Delete", t, cli, "")
 }
 
@@ -120,7 +120,7 @@ func TestMetrics(t *testing.T) {
 	cli := setup(t, "qemu:///system", 9003)
 	cli.guest.Type = "qemu"
 
-	do("Libvirt.Create", t, cli, "Running")
+	do("Libvirt.Create", t, cli, "running")
 
 	metric("Libvirt.CpuMetrics", t, cli)
 	metric("Libvirt.DiskMetrics", t, cli)
