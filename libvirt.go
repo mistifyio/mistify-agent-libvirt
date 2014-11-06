@@ -213,9 +213,7 @@ func NewLibvirt(uri string, max int) (*Libvirt, error) {
 }
 
 func (c *Connection) Release() {
-	defer func() {
-		c.lv.connections <- c
-	}()
+	c.lv.connections <- c
 }
 
 func (lv *Libvirt) RunHTTP(port uint) error {
@@ -246,6 +244,7 @@ func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 
 func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	conn := lv.getConnection()
+	defer conn.Release()
 
 	xml, err := lv.DomainXML(guest)
 	if err != nil {
@@ -593,9 +592,7 @@ func (lv *Libvirt) NicMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 
 func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	conn := lv.getConnection()
-	defer func() {
-		lv.connections <- conn
-	}()
+	defer conn.Release()
 
 	guest := request.Guest
 
