@@ -217,7 +217,7 @@ func (c *Connection) Release() {
 }
 
 func (lv *Libvirt) RunHTTP(port uint) error {
-	server, err := rpc.NewServer(int(port))
+	server, err := rpc.NewServer(port)
 	if err != nil {
 		return err
 	}
