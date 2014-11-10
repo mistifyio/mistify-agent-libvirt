@@ -31,7 +31,7 @@ type (
 	}
 	Libvirt struct {
 		uri         string
-		connections chan *Connection
+		connections chan struct{}
 		max         int
 	}
 
@@ -195,25 +195,23 @@ func NewLibvirt(uri string, max int) (*Libvirt, error) {
 	lv := &Libvirt{
 		uri:         uri,
 		max:         max,
-		connections: make(chan *Connection, max),
+		connections: make(chan struct{}, max),
 	}
 
 	for i := 0; i < max; i++ {
-		conn, err := libvirt.NewVirConnection(uri)
-		if err != nil {
-			return nil, err
-		}
-		lv.connections <- &Connection{
-			VirConnection: &conn,
-			lv:            lv,
-		}
+		lv.connections <- struct{}{}
 	}
 
 	return lv, nil
 }
 
-func (c *Connection) Release() {
-	c.lv.connections <- c
+func (c *Connection) Release() error {
+	c.lv.connections <- struct{}{}
+	_, err := c.CloseConnection()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (lv *Libvirt) RunHTTP(port uint) error {
@@ -226,14 +224,28 @@ func (lv *Libvirt) RunHTTP(port uint) error {
 	return server.ListenAndServe()
 }
 
-func (lv *Libvirt) getConnection() *Connection {
-	fmt.Println(len(lv.connections))
-	return <-lv.connections
+func (lv *Libvirt) getConnection() (*Connection, error) {
+	<-lv.connections
+	virConn, err := libvirt.NewVirConnection(lv.uri)
+	if err != nil {
+		lv.connections <- struct{}{}
+		return nil, err
+	}
+
+	conn := &Connection{
+		VirConnection: &virConn,
+		lv:            lv,
+	}
+	return conn, nil
 }
 
 func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
-	conn := lv.getConnection()
+	conn, err := lv.getConnection()
+	if err != nil {
+		return nil, err
+	}
 	defer conn.Release()
+
 	domain, err := conn.LookupDomainByName(name)
 	if err != nil {
 		return nil, err
@@ -243,7 +255,10 @@ func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 }
 
 func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
-	conn := lv.getConnection()
+	conn, err := lv.getConnection()
+	if err != nil {
+		return nil, err
+	}
 	defer conn.Release()
 
 	xml, err := lv.DomainXML(guest)
@@ -591,7 +606,10 @@ func (lv *Libvirt) NicMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 }
 
 func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	conn := lv.getConnection()
+	conn, err := lv.getConnection()
+	if err != nil {
+		return err
+	}
 	defer conn.Release()
 
 	guest := request.Guest
