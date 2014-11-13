@@ -16,11 +16,11 @@ type (
 
 func main() {
 
-	var port int
+	var port uint
 	var help bool
 
 	flag.BoolVar(&help, []string{"h", "#help", "-help"}, false, "display the help")
-	flag.IntVar(&port, []string{"p", "#port", "-port"}, 19999, "listen port")
+	flag.UintVar(&port, []string{"p", "#port", "-port"}, 19999, "listen port")
 	flag.Parse()
 
 	if help {
