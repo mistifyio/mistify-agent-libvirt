@@ -28,15 +28,28 @@ func main() {
 		os.Exit(0)
 	}
 
+	log.SetFormatter(&log.JSONFormatter{})
+
 	server, err := rpc.NewServer(port)
 	if err != nil {
-		log.Fatal(err)
+		log.WithFields(log.Fields{
+			"error": err,
+			"func":  "rpc.NewServer",
+		}).Fatal(err)
 	}
 
 	lv, err := libvirt.NewLibvirt("qemu:///system", 4)
 	if err != nil {
-		log.Fatal(err)
+		log.WithFields(log.Fields{
+			"error": err,
+			"func":  "libvirt.NewLibvirt",
+		}).Fatal(err)
 	}
 	server.RegisterService(lv)
-	log.Fatal(server.ListenAndServe())
+	if err = server.ListenAndServe(); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"func":  "rpc.Server.ListenAndServe",
+		}).Fatal(err)
+	}
 }

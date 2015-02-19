@@ -7,9 +7,9 @@ import (
 
 	"encoding/xml"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/alexzorin/libvirt-go"
 	"github.com/mistifyio/mistify-agent/client"
-	"github.com/mistifyio/mistify-agent/log"
 	"github.com/mistifyio/mistify-agent/rpc"
 )
 
@@ -327,7 +327,9 @@ func (lv *Libvirt) Restart(http *http.Request, request *rpc.GuestRequest, respon
 }
 
 func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	log.Info("Libvirt.Poweroff %s\n", request.Guest.Id)
+	log.WithFields(log.Fields{
+		"guest": request.Guest.Id,
+	}).Info("Libvirt.Poweroff")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
 		return domain.Destroy()
@@ -335,7 +337,9 @@ func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, respo
 }
 
 func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	log.Info("Libvirt.Delete %s\n", request.Guest.Id)
+	log.WithFields(log.Fields{
+		"guest": request.Guest.Id,
+	}).Info("Libvirt.Delete")
 
 	domain, err := lv.LookupDomainByName(request.Guest.Id)
 	if err != nil {
@@ -368,7 +372,9 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 }
 
 func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	log.Info("Libvirt.Create %s\n", request.Guest.Id)
+	log.WithFields(log.Fields{
+		"guest": request.Guest.Id,
+	}).Info("Libvirt.Create")
 
 	domain, err := lv.NewDomain(request.Guest)
 	if err != nil {
@@ -396,7 +402,9 @@ func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, respons
 }
 
 func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	log.Info("Libvirt.Run %s\n", request.Guest.Id)
+	log.WithFields(log.Fields{
+		"guest": request.Guest.Id,
+	}).Info("Libvirt.Run")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
 
@@ -434,7 +442,9 @@ func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *
 }
 
 func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	log.Info("Libvirt.Reboot %s\n", request.Guest.Id)
+	log.WithFields(log.Fields{
+		"guest": request.Guest.Id,
+	}).Info("Libvirt.Reboot")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
 		return domain.Reboot(0)
@@ -442,7 +452,9 @@ func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, respons
 }
 
 func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	log.Info("Libvirt.Shutdown %s\n", request.Guest.Id)
+	log.WithFields(log.Fields{
+		"guest": request.Guest.Id,
+	}).Info("Libvirt.Shutdown")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
 
@@ -459,7 +471,9 @@ func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, respo
 }
 
 func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-	log.Info("Libvirt.Status %s\n", request.Guest.Id)
+	log.WithFields(log.Fields{
+		"guest": request.Guest.Id,
+	}).Info("Libvirt.Status")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
 		// DomainWrapper gets the state already, no need to do anything here
