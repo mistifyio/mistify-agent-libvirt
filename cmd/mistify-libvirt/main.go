@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	flag "github.com/docker/docker/pkg/mflag"
 	"github.com/mistifyio/mistify-agent-libvirt"
-	"github.com/mistifyio/mistify-agent/log"
 	"github.com/mistifyio/mistify-agent/rpc"
 )
 
