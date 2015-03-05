@@ -16,7 +16,7 @@ func main() {
 
 	var port uint
 
-	flag.UintVarP(&port, "port", "p", 19999, "listen port")
+	flag.UintVarP(&port, "port", "p", 20001, "listen port")
 	flag.Parse()
 
 	log.SetFormatter(&log.JSONFormatter{})
