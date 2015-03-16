@@ -20,7 +20,13 @@ func main() {
 	flag.UintVarP(&port, "port", "p", 20001, "listen port")
 	flag.Parse()
 
-	logx.DefaultSetup("info")
+	err := logx.DefaultSetup("info")
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"func":  "logx.DefaultSetup",
+		}).Fatal("failed to set up logrus")
+	}
 
 	server, err := rpc.NewServer(port)
 	if err != nil {
