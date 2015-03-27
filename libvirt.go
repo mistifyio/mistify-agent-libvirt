@@ -13,6 +13,7 @@ import (
 	"github.com/mistifyio/mistify-agent/rpc"
 )
 
+// StateNames maps libvirt domain running states to common name strings
 var StateNames = map[int]string{
 	libvirt.VIR_DOMAIN_NOSTATE:     "unknown",
 	libvirt.VIR_DOMAIN_RUNNING:     "running",
@@ -25,16 +26,20 @@ var StateNames = map[int]string{
 }
 
 type (
+	// Connection is a libvirt connection
 	Connection struct {
 		*libvirt.VirConnection
 		lv *Libvirt
 	}
+
+	// Libvirt is the main struct for interacting with libvirt
 	Libvirt struct {
 		uri         string
 		connections chan struct{}
 		max         int
 	}
 
+	// Domain is a libvirt domain with running state
 	Domain struct {
 		*libvirt.VirDomain
 		State int
@@ -132,7 +137,7 @@ type (
 		Machine string `xml:"machine,attr,omitempty" json:"machine,omitempty"`
 	}
 
-	// Os Boot http://libvirt.org/formatdomain.html#elementsOS
+	// OsBoot http://libvirt.org/formatdomain.html#elementsOS
 	OsBoot struct {
 		Dev string `xml:"dev,attr,omitempty" json:"dev,omitempty"`
 	}
@@ -143,11 +148,13 @@ type (
 		Boot OsBoot `xml:"boot,omitempty" json:"boot,omitempty"`
 	}
 
+	// Graphics http://libvirt.org/formatdomain.html#elementsGraphics
 	Graphics struct {
 		Type string `xml:"type,attr,omitempty" json:"type,omitempty"`
 		Port string `xml:"port,attr,omitempty" json:"port,omitempty"`
 	}
 
+	// MetadataDisk is metadata about a disk
 	MetadataDisk struct {
 		XMLName xml.Name `xml:"http://mistify.io/xml/device/1 disk"`
 		Device  string   `xml:"device,attr"`
@@ -155,27 +162,31 @@ type (
 		Volume  string   `xml:"volume,attr"`
 	}
 
+	// MetadataDevice is metadata about disks
 	MetadataDevice struct {
 		XMLName xml.Name       `xml:"http://mistify.io/xml/device/1 device"`
 		Disks   []MetadataDisk `xml:"http://mistify.io/xml/device/1 disk"`
 	}
 
+	// UserMetadataParameter is an item of metadata about a user
 	UserMetadataParameter struct {
 		Name  string `xml:"name,attr"`
 		Value string `xml:"value,attr"`
 	}
 
+	// UserMetadata is metadata about a use
 	UserMetadata struct {
 		XMLName    xml.Name                `xml:"http://mistify.io/xml/user_metadata/1 user_metadata"`
 		Parameters []UserMetadataParameter `xml:"http://mistify.io/xml/user_metadata/1 parameter"`
 	}
 
+	// Metadata holds all metadata
 	Metadata struct {
 		Device       MetadataDevice `xml:"http://mistify.io/xml/device/1 device"`
 		UserMetadata UserMetadata   `xml:"http://mistify.io/xml/user_metadata/1 user_metadata"`
 	}
 
-	// Domain http://libvirt.org/formatdomain.html#elementsMetadata
+	// VirDomain http://libvirt.org/formatdomain.html#elementsMetadata
 	VirDomain struct {
 		*libvirt.VirDomain `xml:"-" json:"-"`
 		XMLName            struct{} `xml:"domain" json:"-"`
@@ -191,6 +202,7 @@ type (
 	}
 )
 
+// NewLibvirt creates a new Libvirt object and initializes the connection limit
 func NewLibvirt(uri string, max int) (*Libvirt, error) {
 	lv := &Libvirt{
 		uri:         uri,
@@ -205,6 +217,7 @@ func NewLibvirt(uri string, max int) (*Libvirt, error) {
 	return lv, nil
 }
 
+// Release closes a connection and returns one limiter to the pool
 func (c *Connection) Release() error {
 	c.lv.connections <- struct{}{}
 	_, err := c.CloseConnection()
@@ -214,13 +227,16 @@ func (c *Connection) Release() error {
 	return nil
 }
 
+// RunHTTP runs the HTTP server
 func (lv *Libvirt) RunHTTP(port uint) error {
 	server, err := rpc.NewServer(port)
 	if err != nil {
 		return err
 	}
 
-	server.RegisterService(lv)
+	if err := server.RegisterService(lv); err != nil {
+		return err
+	}
 	return server.ListenAndServe()
 }
 
@@ -239,6 +255,7 @@ func (lv *Libvirt) getConnection() (*Connection, error) {
 	return conn, nil
 }
 
+// LookupDomainByName retrieves a libvirt domain based on a name string
 func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 	conn, err := lv.getConnection()
 	if err != nil {
@@ -254,6 +271,7 @@ func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 	return &domain, err
 }
 
+// NewDomain creates a new libvirt domain from a guest
 func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	conn, err := lv.getConnection()
 	if err != nil {
@@ -274,6 +292,7 @@ func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	return &domain, err
 }
 
+// GetState looks up the running state of a libvirt domain
 func GetState(domain *libvirt.VirDomain) (int, error) {
 	state, err := domain.GetState()
 	if err != nil {
@@ -283,6 +302,8 @@ func GetState(domain *libvirt.VirDomain) (int, error) {
 	return state[0], nil
 }
 
+// DomainWrapper looks up a libvirt domain and state for a request guest, runs a
+// function on it, and updates the guest for the response
 func (lv *Libvirt) DomainWrapper(fn func(*libvirt.VirDomain, int) error) func(*http.Request, *rpc.GuestRequest, *rpc.GuestResponse) error {
 	return func(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 		if request.Guest == nil || request.Guest.Id == "" {
@@ -322,10 +343,12 @@ func (lv *Libvirt) DomainWrapper(fn func(*libvirt.VirDomain, int) error) func(*h
 
 // Guest Actions
 
+// Restart reboots a libvirt domain for a guest
 func (lv *Libvirt) Restart(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	return lv.Reboot(http, request, response)
 }
 
+// Poweroff destroys a libvirt domain for a guest
 func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
 		"guest": request.Guest.Id,
@@ -336,6 +359,7 @@ func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, respo
 	})(http, request, response)
 }
 
+// Delete completely removes a libvirt domain for a guest
 func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
 		"guest": request.Guest.Id,
@@ -371,6 +395,7 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 	return nil
 }
 
+// Create creates a new libvirt domain for a guest
 func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
 		"guest": request.Guest.Id,
@@ -401,6 +426,7 @@ func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, respons
 	return nil
 }
 
+// Run creates or resumes a libvirt domain for a guest
 func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
 		"guest": request.Guest.Id,
@@ -419,7 +445,7 @@ func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *
 			return err
 		}
 
-		for i, _ := range request.Guest.Nics {
+		for i := range request.Guest.Nics {
 			nic := &request.Guest.Nics[i]
 			nic.Device = v.Devices.Interfaces[i].Target.Device
 			nic.Name = v.Devices.Interfaces[i].Alias.Name
@@ -441,6 +467,7 @@ func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *
 	})(http, request, response)
 }
 
+// Reboot reboots a libvirt domain for a guest
 func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
 		"guest": request.Guest.Id,
@@ -451,6 +478,7 @@ func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, respons
 	})(http, request, response)
 }
 
+// Shutdown shuts down a libvirt domain for a guest
 func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
 		"guest": request.Guest.Id,
@@ -470,6 +498,7 @@ func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, respo
 	})(http, request, response)
 }
 
+// Status looks up the running status of a libvirt domain for a guest
 func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
 		"guest": request.Guest.Id,
@@ -481,6 +510,7 @@ func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, respons
 	})(http, request, response)
 }
 
+// CpuMetrics looks up the cpu metrics for a libvirt domain for a guest
 func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
 
 	domain, err := lv.LookupDomainByName(request.Guest.Id)
@@ -493,7 +523,7 @@ func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 
 	// see virsh-domain.c in libvirt as this does not make sense without
 	// seeing it in context there
-	max_id, err := domain.GetCPUStats(nil, 0, 0, 0, 0)
+	maxID, err := domain.GetCPUStats(nil, 0, 0, 0, 0)
 	if err != nil {
 		return err
 	}
@@ -503,7 +533,7 @@ func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 		return err
 	}
 
-	for i := 0; i < max_id; i++ {
+	for i := 0; i < maxID; i++ {
 		params := libvirt.VirTypedParameters{}
 
 		_, err := domain.GetCPUStats(&params, nparams, i, 1, 0)
@@ -531,6 +561,7 @@ func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 	return nil
 }
 
+// DiskMetrics looks up the disk metrics for a libvirt domain for a guest
 func (lv *Libvirt) DiskMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
 
 	domain, err := lv.LookupDomainByName(request.Guest.Id)
@@ -584,6 +615,7 @@ func (lv *Libvirt) DiskMetrics(r *http.Request, request *rpc.GuestMetricsRequest
 	return nil
 }
 
+// NicMetrics looks up the nic metrics for a libvirt domain for a guest
 func (lv *Libvirt) NicMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
 	domain, err := lv.LookupDomainByName(request.Guest.Id)
 	if err != nil {
@@ -619,6 +651,7 @@ func (lv *Libvirt) NicMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 	return nil
 }
 
+// CreateGuest creates disks and defines a new domain for a guest
 func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	conn, err := lv.getConnection()
 	if err != nil {
@@ -633,7 +666,7 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 	}
 
 	dev := 'a'
-	for i, _ := range guest.Disks {
+	for i := range guest.Disks {
 		disk := &guest.Disks[i]
 		// TODO: do we want to support non-virtio??
 		disk.Bus = "virtio"

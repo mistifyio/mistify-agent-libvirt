@@ -8,6 +8,7 @@ import (
 	"github.com/mistifyio/mistify-agent/client"
 )
 
+// DomainXML populates a libvirt domain xml template with guest properties
 func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
 	fmt.Println(guest)
 

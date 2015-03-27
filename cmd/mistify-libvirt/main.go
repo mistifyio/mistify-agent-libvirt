@@ -8,11 +8,6 @@ import (
 	flag "github.com/spf13/pflag"
 )
 
-type (
-	Libvirt struct {
-	}
-)
-
 func main() {
 
 	var port uint
@@ -42,7 +37,12 @@ func main() {
 			"func":  "libvirt.NewLibvirt",
 		}).Fatal(err)
 	}
-	server.RegisterService(lv)
+	if err := server.RegisterService(lv); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"func":  "server.RegisterService",
+		}).Fatal(err)
+	}
 	if err = server.ListenAndServe(); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
