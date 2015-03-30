@@ -343,7 +343,7 @@ func (lv *Libvirt) DomainWrapper(fn func(*libvirt.VirDomain, int) error) func(*h
 
 // Guest Actions
 
-// Restart reboots a libvirt domain for a guest
+// Restart reboots a libvirt domain for a guest. Internally calls Reboot.
 func (lv *Libvirt) Restart(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	return lv.Reboot(http, request, response)
 }
