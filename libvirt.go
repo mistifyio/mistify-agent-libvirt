@@ -348,7 +348,8 @@ func (lv *Libvirt) Restart(http *http.Request, request *rpc.GuestRequest, respon
 	return lv.Reboot(http, request, response)
 }
 
-// Poweroff destroys a libvirt domain for a guest
+// Poweroff destroys a libvirt domain for a guest. Effectively pulls the (virtual) power cord.
+// https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainDestroy
 func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
 		"guest": request.Guest.Id,
@@ -478,7 +479,8 @@ func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, respons
 	})(http, request, response)
 }
 
-// Shutdown shuts down a libvirt domain for a guest
+// Shutdown requests a libvirt domain for a guest to cleanly shutdown.
+// https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainShutdown
 func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
 		"guest": request.Guest.Id,
