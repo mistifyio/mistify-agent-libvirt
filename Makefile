@@ -17,5 +17,3 @@ install: cmd/mistify-libvirt/mistify-libvirt
 	mkdir -p $(DESTDIR)${SV_DIR}
 
 	install -D cmd/mistify-libvirt/mistify-libvirt $(DESTDIR)${SBIN_DIR}/mistify-libvirt
-	install -D -m 0755 scripts/sv/run $(DESTDIR)${SV_DIR}/mistify-libvirt/run
-	install -D -m 0755 scripts/sv/log $(DESTDIR)${SV_DIR}/mistify-libvirt/log/run
