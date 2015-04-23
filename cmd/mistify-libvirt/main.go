@@ -11,7 +11,9 @@ import (
 func main() {
 
 	var port uint
+	var zpool string
 
+	flag.StringVarP(&zpool, "zpool", "z", "mistify", "zpool")
 	flag.UintVarP(&port, "port", "p", 20001, "listen port")
 	flag.Parse()
 
@@ -30,7 +32,7 @@ func main() {
 		}).Fatal(err)
 	}
 
-	lv, err := libvirt.NewLibvirt("qemu:///system", 4)
+	lv, err := libvirt.NewLibvirt("qemu:///system", zpool, 4)
 	if err != nil {
 		log.WithFields(log.Fields{
 			"error": err,

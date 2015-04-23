@@ -37,6 +37,7 @@ type (
 		uri         string
 		connections chan struct{}
 		max         int
+		zpool       string
 	}
 
 	// Domain is a libvirt domain with running state
@@ -203,11 +204,12 @@ type (
 )
 
 // NewLibvirt creates a new Libvirt object and initializes the connection limit
-func NewLibvirt(uri string, max int) (*Libvirt, error) {
+func NewLibvirt(uri string, zpool string, max int) (*Libvirt, error) {
 	lv := &Libvirt{
 		uri:         uri,
 		max:         max,
 		connections: make(chan struct{}, max),
+		zpool:       zpool,
 	}
 
 	for i := 0; i < max; i++ {
