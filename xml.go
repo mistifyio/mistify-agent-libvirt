@@ -12,7 +12,7 @@ import (
 func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
 	fmt.Println(guest)
 
-	const xml = `
+	const xmlFormat = `
 <domain type="{{.Type}}">
   <name>{{.Id}}</name>
   <memory unit="MiB">{{.Memory}}</memory>
@@ -42,7 +42,7 @@ func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
     {{range .Disks}}
     <disk type="block" device="disk">
       <driver name="qemu" type="raw" />
-      <source dev="{{.Source}}" />
+      <source dev="/dev/zvol/%s/images/{{.Source}}" />
       <target dev="{{.Device}}" bus="{{.Bus}}" />
     </disk>
     {{end}}
@@ -50,6 +50,7 @@ func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
 </domain>
 `
 
+	xml := fmt.Sprintf(xmlFormat, lv.zpool)
 	tmpl := template.New("xml")
 	template.Must(tmpl.Parse(xml))
 
