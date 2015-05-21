@@ -11,13 +11,14 @@ import (
 func main() {
 
 	var port uint
-	var zpool string
+	var zpool, logLevel string
 
 	flag.StringVarP(&zpool, "zpool", "z", "mistify", "zpool")
 	flag.UintVarP(&port, "port", "p", 20001, "listen port")
+	flag.StringVarP(&logLevel, "log-level", "l", "warning", "log level: debug/info/warning/error/critical/fatal")
 	flag.Parse()
 
-	if err := logx.DefaultSetup("info"); err != nil {
+	if err := logx.DefaultSetup(logLevel); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 			"func":  "logx.DefaultSetup",
