@@ -40,7 +40,7 @@ func init() {
     {{range .Disks}}
     <disk type="block" device="disk">
       <driver name="qemu" type="raw" />
-      <source dev="/dev/zvol/%s/images/{{.Source}}" />
+      <source dev="{{.Source}}" />
       <target dev="{{.Device}}" bus="{{.Bus}}" />
     </disk>
     {{end}}
