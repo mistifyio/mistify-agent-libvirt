@@ -2,17 +2,15 @@ package libvirt
 
 import (
 	"bytes"
-	"fmt"
 	"text/template"
 
 	"github.com/mistifyio/mistify-agent/client"
 )
 
-// DomainXML populates a libvirt domain xml template with guest properties
-func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
-	fmt.Println(guest)
+var tmpl *template.Template
 
-	const xmlFormat = `
+func init() {
+	const xml = `
 <domain type="{{.Type}}">
   <name>{{.Id}}</name>
   <memory unit="MiB">{{.Memory}}</memory>
@@ -42,17 +40,18 @@ func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
     {{range .Disks}}
     <disk type="block" device="disk">
       <driver name="qemu" type="raw" />
-      <source dev="/dev/zvol/%s/images/{{.Source}}" />
+      <source dev="{{.Source}}" />
       <target dev="{{.Device}}" bus="{{.Bus}}" />
     </disk>
     {{end}}
   </devices>
 </domain>
 `
+	tmpl = template.Must(template.New("xml").Parse(xml))
+}
 
-	xml := fmt.Sprintf(xmlFormat, lv.zpool)
-	tmpl := template.New("xml")
-	template.Must(tmpl.Parse(xml))
+// DomainXML populates a libvirt domain xml template with guest properties
+func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
 
 	buf := new(bytes.Buffer)
 	err := tmpl.Execute(buf, guest)
