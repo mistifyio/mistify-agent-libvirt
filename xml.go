@@ -29,10 +29,10 @@ func init() {
   <devices>
     {{range .Nics}}
     <interface type="bridge">
-      <guest dev="{{.Name}}" />
+      <source bridge="{{.Network}}" />
+	  <virtualport type="openvswitch" />
+	  {{if .Name}}<guest dev="{{.Name}}" />{{end}}
       {{if .Mac}}<mac address="{{.Mac}}" />{{end}}
-      <source bridge='{{.Network}}'/>
-      <target dev="{{.Device}}" />
       {{if .Model}}<model type="{{.Model}}" />{{end}}
     </interface>
     {{end}}

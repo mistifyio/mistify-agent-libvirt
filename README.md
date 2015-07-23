@@ -280,7 +280,7 @@ Libvirt is the main struct for interacting with libvirt
 #### func  NewLibvirt
 
 ```go
-func NewLibvirt(uri string, max int) (*Libvirt, error)
+func NewLibvirt(uri string, zpool string, max int) (*Libvirt, error)
 ```
 NewLibvirt creates a new Libvirt object and initializes the connection limit
 
