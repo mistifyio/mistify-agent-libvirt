@@ -273,6 +273,22 @@ func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 	return &domain, err
 }
 
+// LookupNetworkByName retrieves a libvirt domain based on a name string
+func (lv *Libvirt) LookupNetworkByName(name string) (*libvirt.VirNetwork, error) {
+	conn, err := lv.getConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Release()
+
+	network, err := conn.LookupNetworkByName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	return &network, err
+}
+
 // NewDomain creates a new libvirt domain from a guest
 func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	conn, err := lv.getConnection()
@@ -389,6 +405,17 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 	err = domain.Undefine()
 	if err != nil {
 		return err
+	}
+
+	for _, nic := range request.Guest.Nics {
+		network, err := lv.LookupNetworkByName(nic.Mac)
+		if err != nil {
+			return err
+		}
+
+		if err = network.Undefine(); err != nil {
+			return err
+		}
 	}
 
 	*response = rpc.GuestResponse{
@@ -655,7 +682,7 @@ func (lv *Libvirt) NicMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 	return nil
 }
 
-// CreateGuest creates disks and defines a new domain for a guest
+// CreateGuest creates disks and defines a new domain and network for a guest
 func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	conn, err := lv.getConnection()
 	if err != nil {
@@ -678,6 +705,19 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 		dev++
 	}
 
+	for _, nic := range guest.Nics {
+		n, err := lv.NetworkXML(nic)
+		if err != nil {
+			return err
+		}
+
+		network, err := conn.NetworkDefineXML(n)
+		if err != nil {
+			return err
+		}
+		defer network.Free()
+	}
+
 	x, err := lv.DomainXML(guest)
 	if err != nil {
 		return err
@@ -687,7 +727,6 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 	if err != nil {
 		return err
 	}
-
 	defer domain.Free()
 
 	*response = rpc.GuestResponse{
