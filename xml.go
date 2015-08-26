@@ -30,7 +30,7 @@ func init() {
   <devices>
     {{range .Nics}}
     <interface type="network">
-      <source network='{{.Mac}}' porgroup='vlan-all' />
+      <source network='{{.Mac}}' portgroup='vlan-all' />
 	  {{if .Name}}<guest dev="{{.Name}}" />{{end}}
       {{if .Mac}}<mac address="{{.Mac}}" />{{end}}
       {{if .Model}}<model type="{{.Model}}" />{{end}}
