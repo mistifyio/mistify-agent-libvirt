@@ -413,6 +413,9 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 			return err
 		}
 
+		if err = network.Destroy(); err != nil {
+			return err
+		}
 		if err = network.Undefine(); err != nil {
 			return err
 		}
@@ -716,6 +719,13 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 			return err
 		}
 		defer network.Free()
+
+		if err = network.SetAutostart(true); err != nil {
+			return err
+		}
+		if err = network.Create(); err != nil {
+			return err
+		}
 	}
 
 	x, err := lv.DomainXML(guest)
