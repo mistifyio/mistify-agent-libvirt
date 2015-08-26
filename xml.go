@@ -53,7 +53,7 @@ func init() {
 <network>
 	<name>{{.Mac}}</name>
 	<forward mode='bridge' />
-	<bridge name='{{.Bridge}}' />
+	<bridge name='{{.Network}}' />
 	<virtualport type='openvswitch' />
 	<portgroup name='vlan-all'>
 		<vlan>
