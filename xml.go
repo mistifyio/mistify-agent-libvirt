@@ -7,10 +7,11 @@ import (
 	"github.com/mistifyio/mistify-agent/client"
 )
 
-var tmpl *template.Template
+var domainTemplate *template.Template
+var networkTemplate *template.Template
 
 func init() {
-	const xml = `
+	const domainXML = `
 <domain type="{{.Type}}">
   <name>{{.Id}}</name>
   <memory unit="MiB">{{.Memory}}</memory>
@@ -28,9 +29,8 @@ func init() {
   </os>
   <devices>
     {{range .Nics}}
-    <interface type="bridge">
-      <source bridge="{{.Network}}" />
-	  <virtualport type="openvswitch" />
+    <interface type="network">
+      <source network='{{.Mac}}' portgroup='vlan-all' />
 	  {{if .Name}}<guest dev="{{.Name}}" />{{end}}
       {{if .Mac}}<mac address="{{.Mac}}" />{{end}}
       {{if .Model}}<model type="{{.Model}}" />{{end}}
@@ -47,14 +47,41 @@ func init() {
   </devices>
 </domain>
 `
-	tmpl = template.Must(template.New("xml").Parse(xml))
+	domainTemplate = template.Must(template.New("domainXML").Parse(domainXML))
+
+	const networkXML = `
+<network>
+	<name>{{.Mac}}</name>
+	<forward mode='bridge' />
+	<bridge name='{{.Network}}' />
+	<virtualport type='openvswitch' />
+	<portgroup name='vlan-all'>
+		<vlan>
+		{{range .VLANs}}
+			<tag id ='{{.}}' />
+		{{end}}
+		</vlan>
+	</portgroup>
+</network>
+`
+	networkTemplate = template.Must(template.New("networkXML").Parse(networkXML))
 }
 
 // DomainXML populates a libvirt domain xml template with guest properties
 func (lv *Libvirt) DomainXML(guest *client.Guest) (string, error) {
-
 	buf := new(bytes.Buffer)
-	err := tmpl.Execute(buf, guest)
+	err := domainTemplate.Execute(buf, guest)
+	if err != nil {
+		return "", err
+	}
+
+	return buf.String(), nil
+}
+
+// NetworkXML populates a libvirt network xml template with guest properties
+func (lv *Libvirt) NetworkXML(nic client.Nic) (string, error) {
+	buf := new(bytes.Buffer)
+	err := networkTemplate.Execute(buf, nic)
 	if err != nil {
 		return "", err
 	}
