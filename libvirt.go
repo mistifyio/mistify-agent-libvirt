@@ -553,7 +553,7 @@ func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 	}
 	defer domain.Free()
 
-	metrics := make([]*client.GuestCpuMetrics, 0, request.Guest.Cpu)
+	metrics := make([]*client.GuestCPUMetrics, 0, request.Guest.Cpu)
 
 	// see virsh-domain.c in libvirt as this does not make sense without
 	// seeing it in context there
@@ -574,7 +574,7 @@ func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 		if err != nil {
 			return err
 		}
-		c := client.GuestCpuMetrics{}
+		c := client.GuestCPUMetrics{}
 		for _, p := range params {
 
 			switch p.Name {
