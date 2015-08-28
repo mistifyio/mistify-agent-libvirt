@@ -49,7 +49,7 @@ defined in http://godoc.org/github.com/mistifyio/mistify-agent/rpc .
     Run
 
     Status
-    CpuMetrics
+    CPUMetrics
     DiskMetrics
     NicMetrics
 
@@ -284,12 +284,12 @@ func NewLibvirt(uri string, zpool string, max int) (*Libvirt, error)
 ```
 NewLibvirt creates a new Libvirt object and initializes the connection limit
 
-#### func (*Libvirt) CpuMetrics
+#### func (*Libvirt) CPUMetrics
 
 ```go
-func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error
+func (lv *Libvirt) CPUMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error
 ```
-CpuMetrics looks up the cpu metrics for a libvirt domain for a guest
+CPUMetrics looks up the cpu metrics for a libvirt domain for a guest
 
 #### func (*Libvirt) Create
 
@@ -303,7 +303,7 @@ Create creates a new libvirt domain for a guest
 ```go
 func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error
 ```
-CreateGuest creates disks and defines a new domain for a guest
+CreateGuest creates disks and defines a new domain and network for a guest
 
 #### func (*Libvirt) Delete
 
@@ -340,6 +340,20 @@ DomainXML populates a libvirt domain xml template with guest properties
 func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error)
 ```
 LookupDomainByName retrieves a libvirt domain based on a name string
+
+#### func (*Libvirt) LookupNetworkByName
+
+```go
+func (lv *Libvirt) LookupNetworkByName(name string) (*libvirt.VirNetwork, error)
+```
+LookupNetworkByName retrieves a libvirt domain based on a name string
+
+#### func (*Libvirt) NetworkXML
+
+```go
+func (lv *Libvirt) NetworkXML(nic client.Nic) (string, error)
+```
+NetworkXML populates a libvirt network xml template with guest properties
 
 #### func (*Libvirt) NewDomain
 

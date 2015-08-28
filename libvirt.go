@@ -544,8 +544,8 @@ func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, respons
 	})(http, request, response)
 }
 
-// CpuMetrics looks up the cpu metrics for a libvirt domain for a guest
-func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
+// CPUMetrics looks up the cpu metrics for a libvirt domain for a guest
+func (lv *Libvirt) CPUMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
 
 	domain, err := lv.LookupDomainByName(request.Guest.Id)
 	if err != nil {

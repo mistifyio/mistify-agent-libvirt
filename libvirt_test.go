@@ -1,11 +1,12 @@
 package libvirt_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/mistifyio/mistify-agent-libvirt"
 	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/rpc"
-	"testing"
-	"time"
 )
 
 type TestClient struct {
@@ -122,7 +123,7 @@ func TestMetrics(t *testing.T) {
 
 	do("Libvirt.Create", t, cli, "running")
 
-	metric("Libvirt.CpuMetrics", t, cli)
+	metric("Libvirt.CPUMetrics", t, cli)
 	metric("Libvirt.DiskMetrics", t, cli)
 	metric("Libvirt.NicMetrics", t, cli)
 
