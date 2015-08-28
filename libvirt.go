@@ -579,9 +579,9 @@ func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 
 			switch p.Name {
 			case "cpu_time":
-				c.CpuTime = float64(p.Value.(uint64)) / 1000000000
+				c.CPUTime = float64(p.Value.(uint64)) / 1000000000
 			case "vcpu_time":
-				c.VcpuTime = float64(p.Value.(uint64)) / 1000000000
+				c.VCPUTime = float64(p.Value.(uint64)) / 1000000000
 			}
 		}
 		metrics = append(metrics, &c)
