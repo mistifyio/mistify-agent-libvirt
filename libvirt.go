@@ -324,11 +324,11 @@ func GetState(domain *libvirt.VirDomain) (int, error) {
 // function on it, and updates the guest for the response
 func (lv *Libvirt) DomainWrapper(fn func(*libvirt.VirDomain, int) error) func(*http.Request, *rpc.GuestRequest, *rpc.GuestResponse) error {
 	return func(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-		if request.Guest == nil || request.Guest.Id == "" {
+		if request.Guest == nil || request.Guest.ID == "" {
 			return syscall.EINVAL
 		}
 
-		domain, err := lv.LookupDomainByName(request.Guest.Id)
+		domain, err := lv.LookupDomainByName(request.Guest.ID)
 		if err != nil {
 			return err
 		}
@@ -370,7 +370,7 @@ func (lv *Libvirt) Restart(http *http.Request, request *rpc.GuestRequest, respon
 // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainDestroy
 func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Poweroff")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -381,10 +381,10 @@ func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, respo
 // Delete completely removes a libvirt domain for a guest
 func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Delete")
 
-	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	domain, err := lv.LookupDomainByName(request.Guest.ID)
 	if err != nil {
 		return err
 	}
@@ -431,7 +431,7 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 // Create creates a new libvirt domain for a guest
 func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Create")
 
 	domain, err := lv.NewDomain(request.Guest)
@@ -462,7 +462,7 @@ func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, respons
 // Run creates or resumes a libvirt domain for a guest
 func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Run")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -503,7 +503,7 @@ func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *
 // Reboot reboots a libvirt domain for a guest
 func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Reboot")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -515,7 +515,7 @@ func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, respons
 // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainShutdown
 func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Shutdown")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -535,7 +535,7 @@ func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, respo
 // Status looks up the running status of a libvirt domain for a guest
 func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Status")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -547,7 +547,7 @@ func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, respons
 // CPUMetrics looks up the cpu metrics for a libvirt domain for a guest
 func (lv *Libvirt) CPUMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
 
-	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	domain, err := lv.LookupDomainByName(request.Guest.ID)
 	if err != nil {
 		return err
 	}
@@ -598,7 +598,7 @@ func (lv *Libvirt) CPUMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 // DiskMetrics looks up the disk metrics for a libvirt domain for a guest
 func (lv *Libvirt) DiskMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
 
-	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	domain, err := lv.LookupDomainByName(request.Guest.ID)
 	if err != nil {
 		return err
 	}
@@ -651,7 +651,7 @@ func (lv *Libvirt) DiskMetrics(r *http.Request, request *rpc.GuestMetricsRequest
 
 // NicMetrics looks up the nic metrics for a libvirt domain for a guest
 func (lv *Libvirt) NicMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
-	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	domain, err := lv.LookupDomainByName(request.Guest.ID)
 	if err != nil {
 		return err
 	}

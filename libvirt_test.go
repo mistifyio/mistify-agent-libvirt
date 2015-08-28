@@ -34,7 +34,7 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 	}
 
 	cli.guest = new(client.Guest)
-	cli.guest.Id = "testlibvirt"
+	cli.guest.ID = "testlibvirt"
 	cli.guest.Memory = 1024
 	cli.guest.CPU = 1
 

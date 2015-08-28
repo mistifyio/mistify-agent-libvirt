@@ -13,7 +13,7 @@ var networkTemplate *template.Template
 func init() {
 	const domainXML = `
 <domain type="{{.Type}}">
-  <name>{{.Id}}</name>
+  <name>{{.ID}}</name>
   <memory unit="MiB">{{.Memory}}</memory>
   <vcpu>{{.CPU}}</vcpu>
 
