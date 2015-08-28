@@ -15,7 +15,7 @@ func init() {
 <domain type="{{.Type}}">
   <name>{{.Id}}</name>
   <memory unit="MiB">{{.Memory}}</memory>
-  <vcpu>{{.Cpu}}</vcpu>
+  <vcpu>{{.CPU}}</vcpu>
 
   {{if .Metadata}}
   <metadata>
