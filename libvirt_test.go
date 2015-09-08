@@ -18,7 +18,7 @@ type TestClient struct {
 }
 
 func setup(t *testing.T, url string, port uint) *TestClient {
-	lv, err := libvirt.NewLibvirt(url, 1)
+	lv, err := libvirt.NewLibvirt(url, "mistify", 1)
 	if err != nil {
 		t.Fatalf("NewLibvirt failed: %s\n", err.Error())
 	}
@@ -28,7 +28,7 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 
 	cli := new(TestClient)
 
-	cli.rpc, err = rpc.NewClient(port)
+	cli.rpc, err = rpc.NewClient(port, "")
 	if err != nil {
 		t.Fatalf("Can't create RPC client: %s\n", err.Error())
 	}
