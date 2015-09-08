@@ -11,6 +11,7 @@ import (
 	"github.com/alexzorin/libvirt-go"
 	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/rpc"
+	logx "github.com/mistifyio/mistify-logrus-ext"
 )
 
 // StateNames maps libvirt domain running states to common name strings
@@ -263,7 +264,7 @@ func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Release()
+	defer logx.LogReturnedErr(conn.Release, nil, "failed to release connection")
 
 	domain, err := conn.LookupDomainByName(name)
 	if err != nil {
@@ -279,7 +280,7 @@ func (lv *Libvirt) LookupNetworkByName(name string) (*libvirt.VirNetwork, error)
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Release()
+	defer logx.LogReturnedErr(conn.Release, nil, "failed to release connection")
 
 	network, err := conn.LookupNetworkByName(name)
 	if err != nil {
@@ -295,7 +296,7 @@ func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Release()
+	defer logx.LogReturnedErr(conn.Release, nil, "failed to release connection")
 
 	xml, err := lv.DomainXML(guest)
 	if err != nil {
@@ -332,7 +333,7 @@ func (lv *Libvirt) DomainWrapper(fn func(*libvirt.VirDomain, int) error) func(*h
 		if err != nil {
 			return err
 		}
-		defer domain.Free()
+		defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 		state, err := GetState(domain)
 		if err != nil {
@@ -388,7 +389,7 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	state, err := GetState(domain)
 	if err != nil {
@@ -438,7 +439,7 @@ func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, respons
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	err = domain.Create()
 	if err != nil {
@@ -551,7 +552,7 @@ func (lv *Libvirt) CPUMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	metrics := make([]*client.GuestCPUMetrics, 0, request.Guest.CPU)
 
@@ -602,7 +603,7 @@ func (lv *Libvirt) DiskMetrics(r *http.Request, request *rpc.GuestMetricsRequest
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	metrics := make(map[string]*client.GuestDiskMetrics)
 
@@ -655,7 +656,7 @@ func (lv *Libvirt) NicMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	metrics := make(map[string]*client.GuestNicMetrics)
 
@@ -691,7 +692,7 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 	if err != nil {
 		return err
 	}
-	defer conn.Release()
+	defer logx.LogReturnedErr(conn.Release, nil, "failed to release connection")
 
 	guest := request.Guest
 
@@ -718,7 +719,7 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 		if err != nil {
 			return err
 		}
-		defer network.Free()
+		defer logx.LogReturnedErr(network.Free, nil, "faield to free network")
 
 		if err = network.SetAutostart(true); err != nil {
 			return err
@@ -737,7 +738,7 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	*response = rpc.GuestResponse{
 		Guest: guest,

@@ -7,6 +7,7 @@ import (
 	"github.com/mistifyio/mistify-agent-libvirt"
 	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/rpc"
+	logx "github.com/mistifyio/mistify-logrus-ext"
 )
 
 type TestClient struct {
@@ -23,7 +24,7 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 		t.Fatalf("NewLibvirt failed: %s\n", err.Error())
 	}
 
-	go lv.RunHTTP(port)
+	go logx.LogReturnedErr(func() error { return lv.RunHTTP(port) }, nil, "failed to run server")
 	time.Sleep(1 * time.Second)
 
 	cli := new(TestClient)
