@@ -11,6 +11,7 @@ import (
 	"github.com/alexzorin/libvirt-go"
 	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/rpc"
+	logx "github.com/mistifyio/mistify-logrus-ext"
 )
 
 // StateNames maps libvirt domain running states to common name strings
@@ -263,7 +264,7 @@ func (lv *Libvirt) LookupDomainByName(name string) (*libvirt.VirDomain, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Release()
+	defer logx.LogReturnedErr(conn.Release, nil, "failed to release connection")
 
 	domain, err := conn.LookupDomainByName(name)
 	if err != nil {
@@ -279,7 +280,7 @@ func (lv *Libvirt) LookupNetworkByName(name string) (*libvirt.VirNetwork, error)
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Release()
+	defer logx.LogReturnedErr(conn.Release, nil, "failed to release connection")
 
 	network, err := conn.LookupNetworkByName(name)
 	if err != nil {
@@ -295,7 +296,7 @@ func (lv *Libvirt) NewDomain(guest *client.Guest) (*libvirt.VirDomain, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Release()
+	defer logx.LogReturnedErr(conn.Release, nil, "failed to release connection")
 
 	xml, err := lv.DomainXML(guest)
 	if err != nil {
@@ -324,15 +325,15 @@ func GetState(domain *libvirt.VirDomain) (int, error) {
 // function on it, and updates the guest for the response
 func (lv *Libvirt) DomainWrapper(fn func(*libvirt.VirDomain, int) error) func(*http.Request, *rpc.GuestRequest, *rpc.GuestResponse) error {
 	return func(r *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
-		if request.Guest == nil || request.Guest.Id == "" {
+		if request.Guest == nil || request.Guest.ID == "" {
 			return syscall.EINVAL
 		}
 
-		domain, err := lv.LookupDomainByName(request.Guest.Id)
+		domain, err := lv.LookupDomainByName(request.Guest.ID)
 		if err != nil {
 			return err
 		}
-		defer domain.Free()
+		defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 		state, err := GetState(domain)
 		if err != nil {
@@ -370,7 +371,7 @@ func (lv *Libvirt) Restart(http *http.Request, request *rpc.GuestRequest, respon
 // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainDestroy
 func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Poweroff")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -381,14 +382,14 @@ func (lv *Libvirt) Poweroff(http *http.Request, request *rpc.GuestRequest, respo
 // Delete completely removes a libvirt domain for a guest
 func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Delete")
 
-	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	domain, err := lv.LookupDomainByName(request.Guest.ID)
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	state, err := GetState(domain)
 	if err != nil {
@@ -431,14 +432,14 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 // Create creates a new libvirt domain for a guest
 func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Create")
 
 	domain, err := lv.NewDomain(request.Guest)
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	err = domain.Create()
 	if err != nil {
@@ -462,7 +463,7 @@ func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, respons
 // Run creates or resumes a libvirt domain for a guest
 func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Run")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -503,7 +504,7 @@ func (lv *Libvirt) Run(http *http.Request, request *rpc.GuestRequest, response *
 // Reboot reboots a libvirt domain for a guest
 func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Reboot")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -515,7 +516,7 @@ func (lv *Libvirt) Reboot(http *http.Request, request *rpc.GuestRequest, respons
 // https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainShutdown
 func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Shutdown")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -535,7 +536,7 @@ func (lv *Libvirt) Shutdown(http *http.Request, request *rpc.GuestRequest, respo
 // Status looks up the running status of a libvirt domain for a guest
 func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, response *rpc.GuestResponse) error {
 	log.WithFields(log.Fields{
-		"guest": request.Guest.Id,
+		"guest": request.Guest.ID,
 	}).Info("Libvirt.Status")
 
 	return lv.DomainWrapper(func(domain *libvirt.VirDomain, state int) error {
@@ -544,16 +545,16 @@ func (lv *Libvirt) Status(http *http.Request, request *rpc.GuestRequest, respons
 	})(http, request, response)
 }
 
-// CpuMetrics looks up the cpu metrics for a libvirt domain for a guest
-func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
+// CPUMetrics looks up the cpu metrics for a libvirt domain for a guest
+func (lv *Libvirt) CPUMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
 
-	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	domain, err := lv.LookupDomainByName(request.Guest.ID)
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
-	metrics := make([]*client.GuestCpuMetrics, 0, request.Guest.Cpu)
+	metrics := make([]*client.GuestCPUMetrics, 0, request.Guest.CPU)
 
 	// see virsh-domain.c in libvirt as this does not make sense without
 	// seeing it in context there
@@ -574,14 +575,14 @@ func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 		if err != nil {
 			return err
 		}
-		c := client.GuestCpuMetrics{}
+		c := client.GuestCPUMetrics{}
 		for _, p := range params {
 
 			switch p.Name {
 			case "cpu_time":
-				c.CpuTime = float64(p.Value.(uint64)) / 1000000000
+				c.CPUTime = float64(p.Value.(uint64)) / 1000000000
 			case "vcpu_time":
-				c.VcpuTime = float64(p.Value.(uint64)) / 1000000000
+				c.VCPUTime = float64(p.Value.(uint64)) / 1000000000
 			}
 		}
 		metrics = append(metrics, &c)
@@ -598,11 +599,11 @@ func (lv *Libvirt) CpuMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 // DiskMetrics looks up the disk metrics for a libvirt domain for a guest
 func (lv *Libvirt) DiskMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
 
-	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	domain, err := lv.LookupDomainByName(request.Guest.ID)
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	metrics := make(map[string]*client.GuestDiskMetrics)
 
@@ -651,11 +652,11 @@ func (lv *Libvirt) DiskMetrics(r *http.Request, request *rpc.GuestMetricsRequest
 
 // NicMetrics looks up the nic metrics for a libvirt domain for a guest
 func (lv *Libvirt) NicMetrics(r *http.Request, request *rpc.GuestMetricsRequest, response *rpc.GuestMetricsResponse) error {
-	domain, err := lv.LookupDomainByName(request.Guest.Id)
+	domain, err := lv.LookupDomainByName(request.Guest.ID)
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	metrics := make(map[string]*client.GuestNicMetrics)
 
@@ -691,7 +692,7 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 	if err != nil {
 		return err
 	}
-	defer conn.Release()
+	defer logx.LogReturnedErr(conn.Release, nil, "failed to release connection")
 
 	guest := request.Guest
 
@@ -718,7 +719,7 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 		if err != nil {
 			return err
 		}
-		defer network.Free()
+		defer logx.LogReturnedErr(network.Free, nil, "faield to free network")
 
 		if err = network.SetAutostart(true); err != nil {
 			return err
@@ -737,7 +738,7 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 	if err != nil {
 		return err
 	}
-	defer domain.Free()
+	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
 
 	*response = rpc.GuestResponse{
 		Guest: guest,

@@ -1,11 +1,13 @@
 package libvirt_test
 
 import (
+	"testing"
+	"time"
+
 	"github.com/mistifyio/mistify-agent-libvirt"
 	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/rpc"
-	"testing"
-	"time"
+	logx "github.com/mistifyio/mistify-logrus-ext"
 )
 
 type TestClient struct {
@@ -17,25 +19,25 @@ type TestClient struct {
 }
 
 func setup(t *testing.T, url string, port uint) *TestClient {
-	lv, err := libvirt.NewLibvirt(url, 1)
+	lv, err := libvirt.NewLibvirt(url, "mistify", 1)
 	if err != nil {
 		t.Fatalf("NewLibvirt failed: %s\n", err.Error())
 	}
 
-	go lv.RunHTTP(port)
+	go logx.LogReturnedErr(func() error { return lv.RunHTTP(port) }, nil, "failed to run server")
 	time.Sleep(1 * time.Second)
 
 	cli := new(TestClient)
 
-	cli.rpc, err = rpc.NewClient(port)
+	cli.rpc, err = rpc.NewClient(port, "")
 	if err != nil {
 		t.Fatalf("Can't create RPC client: %s\n", err.Error())
 	}
 
 	cli.guest = new(client.Guest)
-	cli.guest.Id = "testlibvirt"
+	cli.guest.ID = "testlibvirt"
 	cli.guest.Memory = 1024
-	cli.guest.Cpu = 1
+	cli.guest.CPU = 1
 
 	disk := client.Disk{
 		Bus:    "sata",
@@ -122,7 +124,7 @@ func TestMetrics(t *testing.T) {
 
 	do("Libvirt.Create", t, cli, "running")
 
-	metric("Libvirt.CpuMetrics", t, cli)
+	metric("Libvirt.CPUMetrics", t, cli)
 	metric("Libvirt.DiskMetrics", t, cli)
 	metric("Libvirt.NicMetrics", t, cli)
 

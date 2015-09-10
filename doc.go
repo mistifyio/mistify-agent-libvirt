@@ -46,7 +46,7 @@ RPC Methods
 	Run
 
 	Status
-	CpuMetrics
+	CPUMetrics
 	DiskMetrics
 	NicMetrics
 
