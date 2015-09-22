@@ -1,0 +1,64 @@
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Create a started container
+      lxc_container:
+        name: test-container
+        container_log: true
+        template: download
+        state: started
+        template_options: --dist ubuntu --arch amd64 --release trusty
+        config: "$HOME/.config/lxc/default.conf"
+        container_command: |
+          apt-get update
+          apt-get install -y openssh-server
+          mkdir -p ~/.ssh
+          echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCOZAvvd4r7P0wAzx4vIhO7WtwhCE+LySBjV5q9hgR70ccWjVCL+OaK2LqohlL4QdwMOSsUcybwekl3gVtIIMPhqfp+vWM2QeMUO7bnU69mawYkb0EhJLUfNgWihsXirnABhd/jeRcfNtR0icxd/g1w9f28ozpzJzHlyNq3QxJDT6M26+4gY02O4CDH43H9lhYpvURqOWi6jjXMPf3R84NIYY6jTUln8G44sJf9U0sRIH7ulr/o7V9VSaK9esqH8pBoyLlxTcVmO3ve9hYeoGl0BujfX6NA26Eb0GX4CSAF9GayGA8AmiiyVbrJ+y5DCL9hNjNF9kST7JNKmAdBKr3v terraform > ~/.ssh/authorized_keys
+      register: lxc_container_info
+
+        # dynamically update inventory to make it available down the playbook
+    - name: register new container hostname
+      add_host: name="{{lxc_container_info.lxc_container.ips[0]}}" groups="test-container"
+
+
+- hosts: test-container
+  remote_user: ubuntu
+  sudo: yes
+  roles:
+    - { role: robotframework }
+    - { role: azavea.ruby, tags: ['ruby'] }
+    - { role: geerlingguy.java }
+    - role: gotansible.golang
+      golang_version: 1.4.2
+      golang_per_user: false
+      tags: golang
+    - { role: install-golang-dependencies, tags: ['golang'] }
+    - role: etcd
+      etcd_peers_group: etcd
+      tags: ['golang_deps', 'golang']
+    - role: aws-cli
+      aws_cli_user: "{{jenkins_user}}"
+      aws_cli_home: "{{jenkins_home}}"
+      aws_output_format: 'json'
+      aws_region: 'us-east-1'
+    - role: aws-cli
+      aws_output_format: 'json'
+      aws_region: 'us-east-1'
+  tasks:
+  handlers:
+    - include: roles/common/handlers/main.yml
+  tags:
+
+# Install as ubuntu
+- hosts: test-container
+  remote_user: ubuntu
+  vars:
+  roles:
+    - role: laggyluke.add-ssh-keys-from-github
+      add_ssh_keys_from_github:
+        usernames:
+          - omniti-devops
+          - TauZero
+      tags: ssh
+  tasks:
+  tags:

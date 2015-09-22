@@ -26,5 +26,5 @@ _testmain.go
 .*~
 
 .vagrant
-
+.idea/
 cmd/mistify-libvirt/mistify-libvirt
