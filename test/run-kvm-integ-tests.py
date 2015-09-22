@@ -3,7 +3,7 @@
 import git, os, shutil, subprocess
 
 repo_name = 'infrastructure-jenkins-slave'
-repo_remote = "https://github.com/mistifyio/" + repo_name
+repo_remote = "git@github.com:mistifyio/" + repo_name
 branch = 'master'
 checkout_dir = repo_name
 root_dir = os.path.dirname(os.path.realpath(__file__))
