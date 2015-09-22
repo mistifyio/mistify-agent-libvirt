@@ -27,17 +27,20 @@ shutil.copy(checkout_dir + '/vars/vaulted_vars', root_dir + '/provisioning/group
 print "Copy requirements file"
 shutil.copy(checkout_dir + '/requirements.yml', root_dir + '/provisioning/requirements.yml')
 
-try:
-    install_ansible_roles_cmd = ['ansible-galaxy', 'install', '-f', '-r', checkout_dir + '/requirements.yml', '-p',
-                                 container_provisioning_roles_dir]
-    print 'CMD:', ' '.join(install_ansible_roles_cmd)
-    output = subprocess.check_output(install_ansible_roles_cmd, stderr=subprocess.STDOUT)
-    print output
-except subprocess.CalledProcessError as e:
-    print "error>", e.output, '<'
-    exit(1)
+print "Installing third party ansible roles"
+executeCommand(['ansible-galaxy', 'install', '-f', '-r', checkout_dir + '/requirements.yml', '-p',
+                                 container_provisioning_roles_dir])
 
+print "Executing lxc creation and provisioning"
+executeCommand(['ansible-playbook', 'provision-container.yml'])
 
-    # Ansible galaxy install infra jenkins slave roles for playbooks
-    # Install python lxc
-    # Call ansible lxc provisioner
+print "Executing go kvm tests"
+executeCommand(['ansible-playbook', 'execute-tests.yml'])
+
+def executeCommand(cmd):
+	try:
+	    print 'CMD:', ' '.join(cmd)
+	    subprocess.check_output(install_ansible_provision_cmd, stderr=subprocess.STDOUT)
+	except subprocess.CalledProcessError as e:
+	    print "error>", e.output, '<'
+	    exit(1)
