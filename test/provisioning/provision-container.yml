@@ -14,6 +14,8 @@
           apt-get install -y openssh-server
           mkdir -p ~/.ssh
           echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCOZAvvd4r7P0wAzx4vIhO7WtwhCE+LySBjV5q9hgR70ccWjVCL+OaK2LqohlL4QdwMOSsUcybwekl3gVtIIMPhqfp+vWM2QeMUO7bnU69mawYkb0EhJLUfNgWihsXirnABhd/jeRcfNtR0icxd/g1w9f28ozpzJzHlyNq3QxJDT6M26+4gY02O4CDH43H9lhYpvURqOWi6jjXMPf3R84NIYY6jTUln8G44sJf9U0sRIH7ulr/o7V9VSaK9esqH8pBoyLlxTcVmO3ve9hYeoGl0BujfX6NA26Eb0GX4CSAF9GayGA8AmiiyVbrJ+y5DCL9hNjNF9kST7JNKmAdBKr3v terraform > ~/.ssh/authorized_keys
+          chown -R ubuntu:ubuntu ~/.ssh
+          echo StrictHostKeyChecking no > ~/.ssh/config
       register: lxc_container_info
 
         # dynamically update inventory to make it available down the playbook

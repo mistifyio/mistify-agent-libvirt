@@ -1,3 +1,5 @@
+localhost connection=local
+
 [jenkins_slaves]
 54.175.108.222
 
