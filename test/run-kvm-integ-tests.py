@@ -32,15 +32,15 @@ executeCommand(['ansible-galaxy', 'install', '-f', '-r', checkout_dir + '/requir
                                  container_provisioning_roles_dir])
 
 print "Executing lxc creation and provisioning"
-executeCommand(['ansible-playbook', 'provision-container.yml'])
+executeCommand(['ansible-playbook', 'provisioning/provision-container.yml'])
 
 print "Executing go kvm tests"
-executeCommand(['ansible-playbook', 'execute-tests.yml'])
+executeCommand(['ansible-playbook', 'provisioning/execute-tests.yml'])
 
 def executeCommand(cmd):
 	try:
 	    print 'CMD:', ' '.join(cmd)
-	    subprocess.check_output(install_ansible_provision_cmd, stderr=subprocess.STDOUT)
+	    subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 	except subprocess.CalledProcessError as e:
 	    print "error>", e.output, '<'
 	    exit(1)
