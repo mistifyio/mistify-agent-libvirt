@@ -8,7 +8,7 @@
 
     - name: Create a started container
       lxc_container:
-        name: test-container
+        name: go-mistify-libvirt-test
         container_log: true
         template: download
         state: started
@@ -34,11 +34,11 @@
 
         # dynamically update inventory to make it available down the playbook
     - name: register new container hostname
-      add_host: name="{{lxc_container_info.lxc_container.ips[0]}}" groups="test-container"
+      add_host: name="{{lxc_container_info.lxc_container.ips[0]}}" groups="go-mistify-libvirt-test"
       tags: test_only
 
 # Install as root, to setup ubuntu as a sudoer
-- hosts: test-container
+- hosts: go-mistify-libvirt-test
   remote_user: root
   vars_files:
       - 'vars/vaulted_vars'
@@ -48,7 +48,7 @@
     - { role: general-slave-setup }
 
 # Install as ubuntu
-- hosts: test-container
+- hosts: go-mistify-libvirt-test
   remote_user: ubuntu
   sudo: yes
   roles:
@@ -75,31 +75,24 @@
       tags: test_only
     - name: Run go kvm tests
       shell: |
-          mkdir workspace
+          export WORKSPACE=/home/ubuntu/workspace
+          export GOPATH=$WORKSPACE
+          export PATH=/usr/local/go/bin:$PATH
+          export REPO={{mistify_agent_repo_name}}
+          export CHECKOUT_DIR=$WORKSPACE/src/github.com/mistifyio/$REPO
+          mkdir -p $WORKSPACE
           cd $WORKSPACE
-          git clone {{mistify_agent_repo_url}} $WORKSPACE/src/{{mistify_agent_repo_name}}
-          cd $WORKSPACE/{{mistify_agent_repo_name}}
+          rm -rf $CHECKOUT_DIR
+          git clone {{mistify_agent_repo_url}} $CHECKOUT_DIR
+          cd $WORKSPACE
           python /tmp/go_test_executor.py
-
-      # lxc_container:
-      #   name: test-container
-      #   state: stopped
-      #   container_log: true
-      #   template: download
-      #   template_options: --dist ubuntu --arch amd64 --release trusty
-      #   config: "$HOME/.config/lxc/default.conf"
-      #   container_command: |
-      #     export WORKSPACE=$HOME/gotest_workspace
-      #     export REPO={{mistify_agent_repo_name}}
-      #     mkdir $WORKSPACE
-      #     cd $WORKSPACE
-      #     git clone {{mistify_agent_repo_url}} $WORKSPACE/src/{{mistify_agent_repo_name}}
-      #     cd $WORKSPACE/{{mistify_agent_repo_name}}
-      #     python /tmp/go_test_executor.py
-      # register: output
       tags: test_only
-    - name: Print output
-      debug: var=output
   handlers:
     - include: roles/common/handlers/main.yml
   tags:
+
+- hosts: localhost
+  connection: local
+  tasks:
+    - name: Copy test results to localhost
+      shell: scp ubuntu@{{lxc_container_info.lxc_container.ips[0]}}:/home/ubuntu/workspace/test_results.xml .
