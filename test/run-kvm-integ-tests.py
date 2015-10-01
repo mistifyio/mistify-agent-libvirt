@@ -18,29 +18,30 @@ infrastructure_roles = os.listdir(checkout_dir + '/roles/')
 for role in infrastructure_roles:
     if os.path.isdir(container_provisioning_roles_dir + role):
     	shutil.rmtree(container_provisioning_roles_dir + role)
-    print "Copying", role, "from", repo_name
+    print "Copying role", role, "from", repo_name
     shutil.copytree(checkout_dir + '/roles/' + role, container_provisioning_roles_dir + role)
 
-print "Copy vars files"
-shutil.copy(checkout_dir + '/vars/vaulted_vars', root_dir + '/provisioning/group_vars/vaulted_vars')
+print "Copy vars files from",checkout_dir + '/vars/vaulted_vars', "from", repo_name
+shutil.copy(checkout_dir + '/vars/vaulted_vars', root_dir + '/provisioning/vars/vaulted_vars')
 
 print "Copy requirements file"
 shutil.copy(checkout_dir + '/requirements.yml', root_dir + '/provisioning/requirements.yml')
+
+def executeCommand(cmd):
+	try:
+	    print 'CMD:', ' '.join(cmd)
+	    print subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+	except subprocess.CalledProcessError as e:
+	    print "error>", e.output, '<'
+	    exit(1)
 
 print "Installing third party ansible roles"
 executeCommand(['ansible-galaxy', 'install', '-f', '-r', checkout_dir + '/requirements.yml', '-p',
                                  container_provisioning_roles_dir])
 
+os.chdir(root_dir + '/provisioning')
 print "Executing lxc creation and provisioning"
-executeCommand(['ansible-playbook', 'provisioning/provision-container.yml'])
+executeCommand(['ansible-playbook', 'provision-container.yml'])
 
 print "Executing go kvm tests"
 executeCommand(['ansible-playbook', 'provisioning/execute-tests.yml'])
-
-def executeCommand(cmd):
-	try:
-	    print 'CMD:', ' '.join(cmd)
-	    subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-	except subprocess.CalledProcessError as e:
-	    print "error>", e.output, '<'
-	    exit(1)
