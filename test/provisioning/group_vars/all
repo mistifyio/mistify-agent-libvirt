@@ -7,6 +7,7 @@ jenkins_slave_labels: 'aws'
 jenkins_slave_executors: '2'
 
 lxc_user: "ubuntu"
+lxc_user_group: "ubuntu"
 lxc_user_home: "/home/ubuntu"
 
 git_username: omniti-devops

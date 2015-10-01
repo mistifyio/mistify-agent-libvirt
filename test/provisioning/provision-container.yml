@@ -13,14 +13,14 @@
           apt-get update
           apt-get install -y openssh-server apt-transport-https
           mkdir -p /root/.ssh
-          mkdir -p /home/ubuntu/.ssh
-          chown -R ubuntu:ubuntu /home/ubuntu/.ssh
+          mkdir -p {{lxc_user_home}}/.ssh
+          chown -R {{lxc_user}}:{{lxc_user_group}} {{lxc_user_home}}/.ssh
           echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCOZAvvd4r7P0wAzx4vIhO7WtwhCE+LySBjV5q9hgR70ccWjVCL+OaK2LqohlL4QdwMOSsUcybwekl3gVtIIMPhqfp+vWM2QeMUO7bnU69mawYkb0EhJLUfNgWihsXirnABhd/jeRcfNtR0icxd/g1w9f28ozpzJzHlyNq3QxJDT6M26+4gY02O4CDH43H9lhYpvURqOWi6jjXMPf3R84NIYY6jTUln8G44sJf9U0sRIH7ulr/o7V9VSaK9esqH8pBoyLlxTcVmO3ve9hYeoGl0BujfX6NA26Eb0GX4CSAF9GayGA8AmiiyVbrJ+y5DCL9hNjNF9kST7JNKmAdBKr3v terraform > /root/.ssh/authorized_keys
           echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDPmV7bV8TinX0fDySCiCaQygXUNuOJAtv3+fghgknEw0Nkn84/RiOm3cbtzzbTNh0BxsASWy+1wjx2TFEjB45XUYhEPZvlycCnex8zmj9mJJwlRi7NMcBKVMLQV+H4LltcLXDTUSNpWnaPmfJxhQrlaaF3NkCUPrycxV5LgUJ6ZsoQ1lqp4G80a421djytKFM2PxN4R/6fK6g1K7eStMKn6vSXsJjhlEw7j5QmDQeYBsOiVUqodxGwywS/QwFjPMaB17G3ZsTMknEpxWhoh7a4dSuXKCX0Rd7jR3I+kRfqpcl7qKrybX5SvMF3zXAD+3N5yqAYIc7m4jwBn4or+HqT yoni@omniti.com >> /root/.ssh/authorized_keys
-          echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCOZAvvd4r7P0wAzx4vIhO7WtwhCE+LySBjV5q9hgR70ccWjVCL+OaK2LqohlL4QdwMOSsUcybwekl3gVtIIMPhqfp+vWM2QeMUO7bnU69mawYkb0EhJLUfNgWihsXirnABhd/jeRcfNtR0icxd/g1w9f28ozpzJzHlyNq3QxJDT6M26+4gY02O4CDH43H9lhYpvURqOWi6jjXMPf3R84NIYY6jTUln8G44sJf9U0sRIH7ulr/o7V9VSaK9esqH8pBoyLlxTcVmO3ve9hYeoGl0BujfX6NA26Eb0GX4CSAF9GayGA8AmiiyVbrJ+y5DCL9hNjNF9kST7JNKmAdBKr3v terraform > /home/ubuntu/.ssh/authorized_keys
-          echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDPmV7bV8TinX0fDySCiCaQygXUNuOJAtv3+fghgknEw0Nkn84/RiOm3cbtzzbTNh0BxsASWy+1wjx2TFEjB45XUYhEPZvlycCnex8zmj9mJJwlRi7NMcBKVMLQV+H4LltcLXDTUSNpWnaPmfJxhQrlaaF3NkCUPrycxV5LgUJ6ZsoQ1lqp4G80a421djytKFM2PxN4R/6fK6g1K7eStMKn6vSXsJjhlEw7j5QmDQeYBsOiVUqodxGwywS/QwFjPMaB17G3ZsTMknEpxWhoh7a4dSuXKCX0Rd7jR3I+kRfqpcl7qKrybX5SvMF3zXAD+3N5yqAYIc7m4jwBn4or+HqT yoni@omniti.com >> /home/ubuntu/.ssh/authorized_keys
+          echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCOZAvvd4r7P0wAzx4vIhO7WtwhCE+LySBjV5q9hgR70ccWjVCL+OaK2LqohlL4QdwMOSsUcybwekl3gVtIIMPhqfp+vWM2QeMUO7bnU69mawYkb0EhJLUfNgWihsXirnABhd/jeRcfNtR0icxd/g1w9f28ozpzJzHlyNq3QxJDT6M26+4gY02O4CDH43H9lhYpvURqOWi6jjXMPf3R84NIYY6jTUln8G44sJf9U0sRIH7ulr/o7V9VSaK9esqH8pBoyLlxTcVmO3ve9hYeoGl0BujfX6NA26Eb0GX4CSAF9GayGA8AmiiyVbrJ+y5DCL9hNjNF9kST7JNKmAdBKr3v terraform > {{lxc_user_home}}/.ssh/authorized_keys
+          echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDPmV7bV8TinX0fDySCiCaQygXUNuOJAtv3+fghgknEw0Nkn84/RiOm3cbtzzbTNh0BxsASWy+1wjx2TFEjB45XUYhEPZvlycCnex8zmj9mJJwlRi7NMcBKVMLQV+H4LltcLXDTUSNpWnaPmfJxhQrlaaF3NkCUPrycxV5LgUJ6ZsoQ1lqp4G80a421djytKFM2PxN4R/6fK6g1K7eStMKn6vSXsJjhlEw7j5QmDQeYBsOiVUqodxGwywS/QwFjPMaB17G3ZsTMknEpxWhoh7a4dSuXKCX0Rd7jR3I+kRfqpcl7qKrybX5SvMF3zXAD+3N5yqAYIc7m4jwBn4or+HqT yoni@omniti.com >> {{lxc_user_home}}/.ssh/authorized_keys
           echo StrictHostKeyChecking no > /root/.ssh/config
-          echo StrictHostKeyChecking no > /home/ubuntu/.ssh/config
+          echo StrictHostKeyChecking no > {{lxc_user_home}}/.ssh/config
           sudo service ssh restart
       register: lxc_container_info
       tags: test_only
@@ -53,9 +53,6 @@
       golang_per_user: false
       tags: golang
     - { role: install-golang-dependencies, tags: ['golang'] }
-    - role: etcd
-      etcd_peers_group: etcd
-      tags: ['golang_deps', 'golang']
     - { role: install-openvswitch }
     - { role: configure-mistify }
     - role: laggyluke.add-ssh-keys-from-github
@@ -68,7 +65,7 @@
       tags: test_only
     - name: Run go kvm tests
       shell: |
-          export WORKSPACE=/home/ubuntu/workspace
+          export WORKSPACE={{lxc_user_home}}/workspace
           export GOPATH=$WORKSPACE
           export PATH=/usr/local/go/bin:$PATH
           export REPO={{mistify_agent_repo_name}}
@@ -87,4 +84,4 @@
   connection: local
   tasks:
     - name: Copy test results to localhost
-      shell: scp ubuntu@{{lxc_container_info.lxc_container.ips[0]}}:/home/ubuntu/workspace/test_results.xml .
+      shell: scp {{lxc_user}}@{{lxc_container_info.lxc_container.ips[0]}}:{{lxc_user_home}}/workspace/test_results.xml .

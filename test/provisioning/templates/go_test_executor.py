@@ -39,7 +39,7 @@ try:
 
     lines_iterator = iter(ps.stdout.readline, b"")
     for line in lines_iterator:
-        print(line) # yield line
+        print(line)
         temp_file.write(line)
 
     ps.wait()
