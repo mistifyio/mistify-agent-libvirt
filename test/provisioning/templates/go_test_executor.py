@@ -1,9 +1,9 @@
 import os
 import subprocess
 
-workspace = os.environ['HOME'] + '/gotest_workspace'
+workspace = os.environ['WORKSPACE'] if os.environ.get('WORKSPACE') else os.environ['HOME'] + '/gotest_workspace'
 gopath = os.environ['GOPATH'] if os.environ.get('GOPATH') else os.environ['HOME'] + '/go'
-repo = {{mistify_agent_repo_name}}
+repo = '{{mistify_agent_repo_name}}'
 junit_report = workspace + '/test_results.xml'
 temp_report = workspace + 'temp_results.txt'
 whichgo = ''
