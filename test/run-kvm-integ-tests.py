@@ -5,7 +5,7 @@ import git, os, shutil, subprocess
 repo_name = 'infrastructure-jenkins-slave'
 repo_remote = "git@github.com:mistifyio/" + repo_name
 branch = 'master'
-checkout_dir = repo_name
+checkout_dir = '/tmp/' + repo_name
 root_dir = os.path.dirname(os.path.realpath(__file__))
 
 if os.path.isdir(checkout_dir):
@@ -35,13 +35,27 @@ def executeCommand(cmd):
 	    print "error>", e.output, '<'
 	    exit(1)
 
+def executeCommandRealtimeOutput(cmd):
+	try:
+	    print 'CMD:', ' '.join(cmd)
+	    ps = subprocess.Popen((cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+	    lines_iterator = iter(ps.stdout.readline, b"")
+	    for line in lines_iterator:
+	        print(line) # yield line
+
+		ps.returncode
+	except subprocess.CalledProcessError as e:
+	    print "error>", e.output, '<'
+	    exit(1)
+
+
 print "Installing third party ansible roles"
-executeCommand(['ansible-galaxy', 'install', '-f', '-r', checkout_dir + '/requirements.yml', '-p',
+executeCommandRealtimeOutput(['ansible-galaxy', 'install', '-f', '-r', checkout_dir + '/requirements.yml', '-p',
                                  container_provisioning_roles_dir])
 
-os.chdir(root_dir + '/provisioning')
 print "Executing lxc creation and provisioning"
-executeCommand(['ansible-playbook', 'provision-container.yml'])
+os.chdir(root_dir + '/provisioning')
 
-print "Executing go kvm tests"
-executeCommand(['ansible-playbook', 'provisioning/execute-tests.yml'])
+if executeCommandRealtimeOutput(['ansible-playbook', 'provision-container.yml']) != 0:
+	exit(1)
