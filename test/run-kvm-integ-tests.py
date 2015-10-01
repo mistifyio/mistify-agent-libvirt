@@ -1,5 +1,3 @@
-# Upload deb openvswitch to S3
-# Clone infra jenkins slave repo
 import git, os, shutil, subprocess
 
 repo_name = 'infrastructure-jenkins-slave'
@@ -27,14 +25,6 @@ shutil.copy(checkout_dir + '/vars/vaulted_vars', root_dir + '/provisioning/vars/
 print "Copy requirements file"
 shutil.copy(checkout_dir + '/requirements.yml', root_dir + '/provisioning/requirements.yml')
 
-def executeCommand(cmd):
-	try:
-	    print 'CMD:', ' '.join(cmd)
-	    print subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-	except subprocess.CalledProcessError as e:
-	    print "error>", e.output, '<'
-	    exit(1)
-
 def executeCommandRealtimeOutput(cmd):
 	try:
 	    print 'CMD:', ' '.join(cmd)
@@ -56,6 +46,4 @@ executeCommandRealtimeOutput(['ansible-galaxy', 'install', '-f', '-r', checkout_
 
 print "Executing lxc creation and provisioning"
 os.chdir(root_dir + '/provisioning')
-
-if executeCommandRealtimeOutput(['ansible-playbook', 'provision-container.yml']) != 0:
-	exit(1)
+exit(executeCommandRealtimeOutput(['ansible-playbook', 'provision-container.yml']))

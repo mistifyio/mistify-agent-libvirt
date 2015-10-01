@@ -1,11 +1,6 @@
 - hosts: localhost
   connection: local
   tasks:
-    - name: Grab vault pass
-      shell: cat ~/.vault_pass
-      register: vault_pass
-      tags: test_only
-
     - name: Create a started container
       lxc_container:
         name: go-mistify-libvirt-test
@@ -19,15 +14,13 @@
           apt-get install -y openssh-server apt-transport-https
           mkdir -p /root/.ssh
           mkdir -p /home/ubuntu/.ssh
+          chown -R ubuntu:ubuntu /home/ubuntu/.ssh
           echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCOZAvvd4r7P0wAzx4vIhO7WtwhCE+LySBjV5q9hgR70ccWjVCL+OaK2LqohlL4QdwMOSsUcybwekl3gVtIIMPhqfp+vWM2QeMUO7bnU69mawYkb0EhJLUfNgWihsXirnABhd/jeRcfNtR0icxd/g1w9f28ozpzJzHlyNq3QxJDT6M26+4gY02O4CDH43H9lhYpvURqOWi6jjXMPf3R84NIYY6jTUln8G44sJf9U0sRIH7ulr/o7V9VSaK9esqH8pBoyLlxTcVmO3ve9hYeoGl0BujfX6NA26Eb0GX4CSAF9GayGA8AmiiyVbrJ+y5DCL9hNjNF9kST7JNKmAdBKr3v terraform > /root/.ssh/authorized_keys
           echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDPmV7bV8TinX0fDySCiCaQygXUNuOJAtv3+fghgknEw0Nkn84/RiOm3cbtzzbTNh0BxsASWy+1wjx2TFEjB45XUYhEPZvlycCnex8zmj9mJJwlRi7NMcBKVMLQV+H4LltcLXDTUSNpWnaPmfJxhQrlaaF3NkCUPrycxV5LgUJ6ZsoQ1lqp4G80a421djytKFM2PxN4R/6fK6g1K7eStMKn6vSXsJjhlEw7j5QmDQeYBsOiVUqodxGwywS/QwFjPMaB17G3ZsTMknEpxWhoh7a4dSuXKCX0Rd7jR3I+kRfqpcl7qKrybX5SvMF3zXAD+3N5yqAYIc7m4jwBn4or+HqT yoni@omniti.com >> /root/.ssh/authorized_keys
           echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCOZAvvd4r7P0wAzx4vIhO7WtwhCE+LySBjV5q9hgR70ccWjVCL+OaK2LqohlL4QdwMOSsUcybwekl3gVtIIMPhqfp+vWM2QeMUO7bnU69mawYkb0EhJLUfNgWihsXirnABhd/jeRcfNtR0icxd/g1w9f28ozpzJzHlyNq3QxJDT6M26+4gY02O4CDH43H9lhYpvURqOWi6jjXMPf3R84NIYY6jTUln8G44sJf9U0sRIH7ulr/o7V9VSaK9esqH8pBoyLlxTcVmO3ve9hYeoGl0BujfX6NA26Eb0GX4CSAF9GayGA8AmiiyVbrJ+y5DCL9hNjNF9kST7JNKmAdBKr3v terraform > /home/ubuntu/.ssh/authorized_keys
           echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDPmV7bV8TinX0fDySCiCaQygXUNuOJAtv3+fghgknEw0Nkn84/RiOm3cbtzzbTNh0BxsASWy+1wjx2TFEjB45XUYhEPZvlycCnex8zmj9mJJwlRi7NMcBKVMLQV+H4LltcLXDTUSNpWnaPmfJxhQrlaaF3NkCUPrycxV5LgUJ6ZsoQ1lqp4G80a421djytKFM2PxN4R/6fK6g1K7eStMKn6vSXsJjhlEw7j5QmDQeYBsOiVUqodxGwywS/QwFjPMaB17G3ZsTMknEpxWhoh7a4dSuXKCX0Rd7jR3I+kRfqpcl7qKrybX5SvMF3zXAD+3N5yqAYIc7m4jwBn4or+HqT yoni@omniti.com >> /home/ubuntu/.ssh/authorized_keys
-          chown -R ubuntu:ubuntu /home/ubuntu/.ssh
           echo StrictHostKeyChecking no > /root/.ssh/config
           echo StrictHostKeyChecking no > /home/ubuntu/.ssh/config
-          echo {{vault_pass}} > /root/.vault_pass
-          echo {{vault_pass}} > /home/ubuntu/.vault_pass
           sudo service ssh restart
       register: lxc_container_info
       tags: test_only
@@ -81,10 +74,9 @@
           export REPO={{mistify_agent_repo_name}}
           export CHECKOUT_DIR=$WORKSPACE/src/github.com/mistifyio/$REPO
           mkdir -p $WORKSPACE
-          cd $WORKSPACE
           rm -rf $CHECKOUT_DIR
-          git clone {{mistify_agent_repo_url}} $CHECKOUT_DIR
           cd $WORKSPACE
+          git clone {{mistify_agent_repo_url}} $CHECKOUT_DIR
           python /tmp/go_test_executor.py
       tags: test_only
   handlers:
