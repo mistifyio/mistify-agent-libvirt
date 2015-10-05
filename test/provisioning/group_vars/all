@@ -1,4 +1,3 @@
-jenkins_url: 'http://54.175.251.254:8080'
 jenkins_user: 'jenkins'
 jenkins_group: 'jenkins'
 jenkins_home: '/var/jenkins'
