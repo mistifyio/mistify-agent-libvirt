@@ -5,7 +5,7 @@ repo_remote = "git@github.com:mistifyio/" + repo_name
 branch = 'master'
 checkout_dir = '/tmp/' + repo_name
 root_dir = os.path.dirname(os.path.realpath(__file__))
-
+vars_dir = root_dir + '/provisioning/vars/'
 if os.path.isdir(checkout_dir):
     shutil.rmtree(checkout_dir)
 
@@ -19,10 +19,13 @@ for role in infrastructure_roles:
     print "Copying role", role, "from", repo_name
     shutil.copytree(checkout_dir + '/roles/' + role, container_provisioning_roles_dir + role)
 
-print "Copy vars files from",checkout_dir + '/vars/vaulted_vars', "from", repo_name
-shutil.copy(checkout_dir + '/vars/vaulted_vars', root_dir + '/provisioning/vars/vaulted_vars')
+if not os.path.exists(vars_dir):
+    os.makedirs(vars_dir)
 
-print "Copy requirements file"
+print "Copying vars files from",checkout_dir + '/vars/vaulted_vars', "from", repo_name
+shutil.copy(checkout_dir + '/vars/vaulted_vars', vars_dir + '/vaulted_vars')
+
+print "Copying requirements file"
 shutil.copy(checkout_dir + '/requirements.yml', root_dir + '/provisioning/requirements.yml')
 
 def executeCommandRealtimeOutput(cmd):
