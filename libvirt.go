@@ -333,7 +333,7 @@ func (lv *Libvirt) DomainWrapper(fn func(*libvirt.VirDomain, int) error) func(*h
 		if err != nil {
 			return err
 		}
-		defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
+		defer logx.LogReturnedErr(domain.Free, log.Fields{"guestID": request.Guest.ID}, "failed to free domain")
 
 		state, err := GetState(domain)
 		if err != nil {
@@ -389,7 +389,7 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 	if err != nil {
 		return err
 	}
-	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
+	defer logx.LogReturnedErr(domain.Free, log.Fields{"guestID": request.Guest.ID}, "failed to free domain")
 
 	state, err := GetState(domain)
 	if err != nil {
@@ -439,7 +439,7 @@ func (lv *Libvirt) Create(http *http.Request, request *rpc.GuestRequest, respons
 	if err != nil {
 		return err
 	}
-	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
+	defer logx.LogReturnedErr(domain.Free, log.Fields{"guestID": request.Guest.ID}, "failed to free domain")
 
 	err = domain.Create()
 	if err != nil {
@@ -552,7 +552,7 @@ func (lv *Libvirt) CPUMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 	if err != nil {
 		return err
 	}
-	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
+	defer logx.LogReturnedErr(domain.Free, log.Fields{"guestID": request.Guest.ID}, "failed to free domain")
 
 	metrics := make([]*client.GuestCPUMetrics, 0, request.Guest.CPU)
 
@@ -603,7 +603,7 @@ func (lv *Libvirt) DiskMetrics(r *http.Request, request *rpc.GuestMetricsRequest
 	if err != nil {
 		return err
 	}
-	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
+	defer logx.LogReturnedErr(domain.Free, log.Fields{"guestID": request.Guest.ID}, "failed to free domain")
 
 	metrics := make(map[string]*client.GuestDiskMetrics)
 
@@ -656,7 +656,7 @@ func (lv *Libvirt) NicMetrics(r *http.Request, request *rpc.GuestMetricsRequest,
 	if err != nil {
 		return err
 	}
-	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
+	defer logx.LogReturnedErr(domain.Free, log.Fields{"guestID": request.Guest.ID}, "failed to free domain")
 
 	metrics := make(map[string]*client.GuestNicMetrics)
 
@@ -719,7 +719,7 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 		if err != nil {
 			return err
 		}
-		defer logx.LogReturnedErr(network.Free, nil, "faield to free network")
+		defer logx.LogReturnedErr(network.Free, log.Fields{"networkXML": n}, "failed to free network")
 
 		if err = network.SetAutostart(true); err != nil {
 			return err
@@ -738,7 +738,7 @@ func (lv *Libvirt) CreateGuest(r *http.Request, request *rpc.GuestRequest, respo
 	if err != nil {
 		return err
 	}
-	defer logx.LogReturnedErr(domain.Free, nil, "failed to free domain")
+	defer logx.LogReturnedErr(domain.Free, log.Fields{"domainXML": x}, "failed to free domain")
 
 	*response = rpc.GuestResponse{
 		Guest: guest,
