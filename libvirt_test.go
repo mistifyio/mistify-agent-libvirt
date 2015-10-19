@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/mistifyio/mistify-agent-libvirt"
 	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/rpc"
@@ -75,7 +76,7 @@ func do(action string, t *testing.T, cli *TestClient, expectedState string) {
 
 			err := cli.rpc.Do("Libvirt.Status", cli.request, cli.response)
 			if err != nil {
-				t.Fatalf("Error running Libvirt.Status: %s\n", err.Error())
+				t.Fatalf("Error running Libvirt.Status after %s: %s\n", action, err.Error())
 			}
 
 			if cli.response.Guest.State == expectedState {
@@ -129,4 +130,8 @@ func TestMetrics(t *testing.T) {
 	metric("Libvirt.NicMetrics", t, cli)
 
 	do("Libvirt.Delete", t, cli, "")
+}
+
+func init() {
+	log.SetLevel(log.FatalLevel)
 }

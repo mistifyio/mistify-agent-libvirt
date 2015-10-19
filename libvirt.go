@@ -425,6 +425,10 @@ func (lv *Libvirt) Delete(http *http.Request, request *rpc.GuestRequest, respons
 
 	for _, nic := range request.Guest.Nics {
 		network, err := lv.LookupNetworkByName(nic.Mac)
+		if virError, ok := err.(libvirt.VirError); ok && virError.Code == libvirt.VIR_ERR_NO_NETWORK {
+			continue
+		}
+
 		if err != nil {
 			return err
 		}
