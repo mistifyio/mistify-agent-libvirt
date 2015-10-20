@@ -1,6 +1,10 @@
 package libvirt_test
 
 import (
+	"compress/bzip2"
+	"io"
+	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -20,6 +24,27 @@ type TestClient struct {
 }
 
 func setup(t *testing.T, url string, port uint) *TestClient {
+	filename := os.Getenv("GUEST_IMAGE")
+	if filename == "" {
+		filename = "/tmp/libvirt-test.img"
+	}
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		f, err := os.Create(filename)
+		if err != nil {
+			t.Fatalf("can't create image temp file: %s\n", err.Error())
+		}
+		defer logx.LogReturnedErr(f.Close, nil, "failed to close image file")
+
+		resp, err := http.Get("http://wiki.qemu.org/download/linux-0.2.img.bz2")
+		if err != nil {
+			t.Fatalf("can't download image file: %s\n", err.Error())
+		}
+		defer logx.LogReturnedErr(resp.Body.Close, nil, "failed to close resp body")
+
+		unzipImg := bzip2.NewReader(resp.Body)
+		_, err = io.Copy(f, unzipImg)
+	}
+
 	lv, err := libvirt.NewLibvirt(url, "mistify", 1)
 	if err != nil {
 		t.Fatalf("NewLibvirt failed: %s\n", err.Error())
@@ -44,7 +69,7 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 		Bus:    "sata",
 		Device: "hda",
 		Size:   1024,
-		Source: "/dev/zvol/guests/images/testlibvirt",
+		Source: filename,
 	}
 	cli.guest.Disks = append(cli.guest.Disks, disk)
 
@@ -116,7 +141,7 @@ func TestQemu(t *testing.T) {
 	cli := setup(t, "qemu:///system", 9002)
 	cli.guest.Type = "qemu"
 
-	do("Libvirt.Create", t, cli, "running")
+	do("Libvirt.CreateGuest", t, cli, "running")
 	do("Libvirt.Delete", t, cli, "")
 }
 
@@ -124,7 +149,7 @@ func TestMetrics(t *testing.T) {
 	cli := setup(t, "qemu:///system", 9003)
 	cli.guest.Type = "qemu"
 
-	do("Libvirt.Create", t, cli, "running")
+	do("Libvirt.CreateGuest", t, cli, "running")
 
 	metric("Libvirt.CPUMetrics", t, cli)
 	metric("Libvirt.DiskMetrics", t, cli)
