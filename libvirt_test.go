@@ -89,7 +89,7 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 	nic := client.Nic{
 		Name:    "eth0",
 		Mac:     mac,
-		Network: "default",
+		Network: "mistify0",
 		Device:  "vnet0",
 		VLANs:   []int{1},
 	}
