@@ -2,6 +2,8 @@ package libvirt_test
 
 import (
 	"compress/bzip2"
+	"crypto/md5"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -13,6 +15,7 @@ import (
 	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/rpc"
 	logx "github.com/mistifyio/mistify-logrus-ext"
+	"github.com/pborman/uuid"
 )
 
 type TestClient struct {
@@ -61,7 +64,7 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 	}
 
 	cli.guest = new(client.Guest)
-	cli.guest.ID = "testlibvirt"
+	cli.guest.ID = uuid.New()
 	cli.guest.Memory = 1024
 	cli.guest.CPU = 1
 
@@ -73,9 +76,19 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 	}
 	cli.guest.Disks = append(cli.guest.Disks, disk)
 
+	// Generate a MAC based on the ID. May be overwritten later.
+	md5ID := md5.Sum([]byte(cli.guest.ID))
+	mac := fmt.Sprintf("02:%02x:%02x:%02x:%02x:%02x",
+		md5ID[0],
+		md5ID[1],
+		md5ID[2],
+		md5ID[3],
+		md5ID[4],
+	)
+
 	nic := client.Nic{
 		Name:    "eth0",
-		Mac:     "00:0c:29:2f:00:00",
+		Mac:     mac,
 		Network: "default",
 		Device:  "vnet0",
 		VLANs:   []int{1},
