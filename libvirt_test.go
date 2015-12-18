@@ -109,6 +109,8 @@ func do(action string, t *testing.T, cli *TestClient, expectedState string) {
 		t.Fatalf("Error running %s: %s\n", action, err.Error())
 	}
 
+	cli.request.Guest = cli.response.Guest
+
 	if expectedState != "" {
 		for i := 0; i < 10; i++ {
 			time.Sleep(1 * time.Second)
