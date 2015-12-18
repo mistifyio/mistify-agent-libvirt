@@ -38,7 +38,8 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 		}
 		defer logx.LogReturnedErr(f.Close, nil, "failed to close image file")
 
-		resp, err := http.Get("http://wiki.qemu.org/download/linux-0.2.img.bz2")
+		// Test image from http://wiki.qemu.org/Testing
+		resp, err := http.Get("https://s3.amazonaws.com/omniti-mystify-artifacts/qemu-images/linux-0.2.img.bz2")
 		if err != nil {
 			t.Fatalf("can't download image file: %s\n", err.Error())
 		}
