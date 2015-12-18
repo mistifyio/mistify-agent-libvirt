@@ -1,13 +1,21 @@
 package libvirt_test
 
 import (
+	"compress/bzip2"
+	"crypto/md5"
+	"fmt"
+	"io"
+	"net/http"
+	"os"
 	"testing"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/mistifyio/mistify-agent-libvirt"
 	"github.com/mistifyio/mistify-agent/client"
 	"github.com/mistifyio/mistify-agent/rpc"
 	logx "github.com/mistifyio/mistify-logrus-ext"
+	"github.com/pborman/uuid"
 )
 
 type TestClient struct {
@@ -19,6 +27,28 @@ type TestClient struct {
 }
 
 func setup(t *testing.T, url string, port uint) *TestClient {
+	filename := os.Getenv("GUEST_IMAGE")
+	if filename == "" {
+		filename = "/tmp/libvirt-test.img"
+	}
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		f, err := os.Create(filename)
+		if err != nil {
+			t.Fatalf("can't create image temp file: %s\n", err.Error())
+		}
+		defer logx.LogReturnedErr(f.Close, nil, "failed to close image file")
+
+		// Test image from http://wiki.qemu.org/Testing
+		resp, err := http.Get("https://s3.amazonaws.com/omniti-mystify-artifacts/qemu-images/linux-0.2.img.bz2")
+		if err != nil {
+			t.Fatalf("can't download image file: %s\n", err.Error())
+		}
+		defer logx.LogReturnedErr(resp.Body.Close, nil, "failed to close resp body")
+
+		unzipImg := bzip2.NewReader(resp.Body)
+		_, err = io.Copy(f, unzipImg)
+	}
+
 	lv, err := libvirt.NewLibvirt(url, "mistify", 1)
 	if err != nil {
 		t.Fatalf("NewLibvirt failed: %s\n", err.Error())
@@ -35,7 +65,7 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 	}
 
 	cli.guest = new(client.Guest)
-	cli.guest.ID = "testlibvirt"
+	cli.guest.ID = uuid.New()
 	cli.guest.Memory = 1024
 	cli.guest.CPU = 1
 
@@ -43,15 +73,26 @@ func setup(t *testing.T, url string, port uint) *TestClient {
 		Bus:    "sata",
 		Device: "hda",
 		Size:   1024,
-		Source: "/dev/zvol/guests/images/testlibvirt",
+		Source: filename,
 	}
 	cli.guest.Disks = append(cli.guest.Disks, disk)
 
+	// Generate a MAC based on the ID. May be overwritten later.
+	md5ID := md5.Sum([]byte(cli.guest.ID))
+	mac := fmt.Sprintf("02:%02x:%02x:%02x:%02x:%02x",
+		md5ID[0],
+		md5ID[1],
+		md5ID[2],
+		md5ID[3],
+		md5ID[4],
+	)
+
 	nic := client.Nic{
 		Name:    "eth0",
-		Mac:     "00:0c:29:2f:00:00",
-		Network: "default",
+		Mac:     mac,
+		Network: "mistify0",
 		Device:  "vnet0",
+		VLANs:   []int{1},
 	}
 	cli.guest.Nics = append(cli.guest.Nics, nic)
 
@@ -69,13 +110,15 @@ func do(action string, t *testing.T, cli *TestClient, expectedState string) {
 		t.Fatalf("Error running %s: %s\n", action, err.Error())
 	}
 
+	cli.request.Guest = cli.response.Guest
+
 	if expectedState != "" {
 		for i := 0; i < 10; i++ {
 			time.Sleep(1 * time.Second)
 
 			err := cli.rpc.Do("Libvirt.Status", cli.request, cli.response)
 			if err != nil {
-				t.Fatalf("Error running Libvirt.Status: %s\n", err.Error())
+				t.Fatalf("Error running Libvirt.Status after %s: %s\n", action, err.Error())
 			}
 
 			if cli.response.Guest.State == expectedState {
@@ -114,7 +157,9 @@ func TestQemu(t *testing.T) {
 	cli := setup(t, "qemu:///system", 9002)
 	cli.guest.Type = "qemu"
 
-	do("Libvirt.Create", t, cli, "running")
+	do("Libvirt.CreateGuest", t, cli, "shutoff")
+	do("Libvirt.Run", t, cli, "running")
+	do("Libvirt.Reboot", t, cli, "running")
 	do("Libvirt.Delete", t, cli, "")
 }
 
@@ -122,11 +167,16 @@ func TestMetrics(t *testing.T) {
 	cli := setup(t, "qemu:///system", 9003)
 	cli.guest.Type = "qemu"
 
-	do("Libvirt.Create", t, cli, "running")
+	do("Libvirt.CreateGuest", t, cli, "shutoff")
+	do("Libvirt.Run", t, cli, "running")
 
 	metric("Libvirt.CPUMetrics", t, cli)
 	metric("Libvirt.DiskMetrics", t, cli)
 	metric("Libvirt.NicMetrics", t, cli)
 
 	do("Libvirt.Delete", t, cli, "")
+}
+
+func init() {
+	log.SetLevel(log.FatalLevel)
 }
